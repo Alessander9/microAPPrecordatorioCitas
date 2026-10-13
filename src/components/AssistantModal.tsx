@@ -151,7 +151,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-navy-950/60 backdrop-blur-sm animate-fade-in">
       <div 
-        className="w-full sm:max-w-lg h-[92vh] sm:h-[650px] bg-white dark:bg-navy-900 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200/80 dark:border-navy-800 flex flex-col overflow-hidden animate-slide-up"
+        className="w-full sm:max-w-xl md:max-w-2xl h-[92vh] sm:h-[680px] bg-white dark:bg-navy-900 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200/80 dark:border-navy-800 flex flex-col overflow-hidden animate-slide-up"
         role="dialog"
         aria-modal="true"
       >

@@ -251,7 +251,7 @@ export const RemindersPage: React.FC<RemindersPageProps> = ({ onOpenAssistant })
               </span>
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
             {grouped.hoy.map(client => (
               <ClientCard
                 key={client.id}
@@ -283,7 +283,7 @@ export const RemindersPage: React.FC<RemindersPageProps> = ({ onOpenAssistant })
               </span>
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
             {grouped.atrasados.map(client => (
               <ClientCard
                 key={client.id}
@@ -315,7 +315,7 @@ export const RemindersPage: React.FC<RemindersPageProps> = ({ onOpenAssistant })
               </span>
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
             {grouped.proximos7Dias.map(client => (
               <ClientCard
                 key={client.id}
@@ -347,7 +347,7 @@ export const RemindersPage: React.FC<RemindersPageProps> = ({ onOpenAssistant })
               </span>
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
             {grouped.resto.map(client => (
               <ClientCard
                 key={client.id}

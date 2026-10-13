@@ -8,6 +8,8 @@ import {
   subscribeToPushNotifications, 
   unsubscribeFromPushNotifications 
 } from '../lib/pushSubscription';
+import { useTheme } from '../context/ThemeContext';
+import { ThemeToggleSwitch } from '../components/ThemeToggleSwitch';
 import { getOrCreateDeviceCredentials } from '../lib/syncService';
 import { 
   KeyRound, 
@@ -62,8 +64,8 @@ export const SettingsPage: React.FC = () => {
   const [backupMessage, setBackupMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
-  // Theme state
-  const [theme, setTheme] = useState<'system' | 'light' | 'dark'>('system');
+  // Theme state from global ThemeContext
+  const { theme, setTheme } = useTheme();
   const [isStorageProtected, setIsStorageProtected] = useState(false);
 
   // Load initial settings
@@ -74,13 +76,6 @@ export const SettingsPage: React.FC = () => {
 
     getSetting<string>('therapistName', DEFAULT_THERAPIST_NAME).then(tn => {
       if (tn) setTherapistName(tn);
-    });
-
-    getSetting<'system' | 'light' | 'dark'>('theme', 'system').then(th => {
-      if (th) {
-        setTheme(th);
-        applyTheme(th);
-      }
     });
 
     getSetting<string>('deepseekApiKey', 'sk-4ccc4c2a20ff42ff98a2440bf9c8878d').then(k => {
@@ -94,26 +89,6 @@ export const SettingsPage: React.FC = () => {
   const checkPushStatus = async () => {
     const status = await getPushSubscriptionState();
     setPushStatus(status);
-  };
-
-  const applyTheme = (mode: 'system' | 'light' | 'dark') => {
-    if (mode === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else if (mode === 'light') {
-      document.documentElement.classList.remove('dark');
-    } else {
-      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    }
-  };
-
-  const handleThemeChange = async (mode: 'system' | 'light' | 'dark') => {
-    setTheme(mode);
-    await setSetting('theme', mode);
-    applyTheme(mode);
   };
 
   // Change PIN handler
@@ -301,7 +276,7 @@ export const SettingsPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-24 max-w-xl mx-auto">
+    <div className="space-y-6 pb-24 md:pb-16 max-w-4xl mx-auto">
       
       {/* 1. Seguridad: Cambio de PIN */}
       <section className="bg-white dark:bg-navy-900 rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 dark:border-navy-800">
@@ -681,45 +656,50 @@ export const SettingsPage: React.FC = () => {
         </p>
       </section>
 
-      {/* 5. Tema visual */}
-      <section className="bg-white dark:bg-navy-900 rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 dark:border-navy-800">
-        <h2 className="text-sm font-bold text-navy-900 dark:text-white mb-1">Apariencia</h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Selecciona el modo visual preferido</p>
+      {/* 5. Tema visual y Switch de Color */}
+      <section className="bg-white dark:bg-navy-900 rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 dark:border-navy-800 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-navy-900 dark:text-white mb-0.5">Apariencia y Modo Oscuro</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Alterna al instante con el switch de color o elige tu preferencia</p>
+          </div>
+          <ThemeToggleSwitch showLabels />
+        </div>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-2.5 pt-2 border-t border-slate-100 dark:border-navy-800">
           <button
             type="button"
-            onClick={() => handleThemeChange('light')}
+            onClick={() => setTheme('light')}
             className={`py-2.5 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
               theme === 'light'
-                ? 'bg-gold-500/10 text-gold-600 border-gold-500/40 ring-1 ring-gold-500/40'
-                : 'border-slate-200 dark:border-navy-700 text-slate-600 dark:text-slate-300'
+                ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/40 ring-1 ring-amber-500/40'
+                : 'border-slate-200 dark:border-navy-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-navy-800'
             }`}
           >
-            <Sun className="w-4 h-4" />
+            <Sun className="w-4 h-4 text-amber-500" />
             Claro
           </button>
 
           <button
             type="button"
-            onClick={() => handleThemeChange('dark')}
+            onClick={() => setTheme('dark')}
             className={`py-2.5 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
               theme === 'dark'
                 ? 'bg-gold-500/10 text-gold-400 border-gold-500/40 ring-1 ring-gold-500/40'
-                : 'border-slate-200 dark:border-navy-700 text-slate-600 dark:text-slate-300'
+                : 'border-slate-200 dark:border-navy-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-navy-800'
             }`}
           >
-            <Moon className="w-4 h-4" />
+            <Moon className="w-4 h-4 text-gold-400" />
             Oscuro
           </button>
 
           <button
             type="button"
-            onClick={() => handleThemeChange('system')}
+            onClick={() => setTheme('system')}
             className={`py-2.5 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition ${
               theme === 'system'
                 ? 'bg-gold-500/10 text-gold-500 border-gold-500/40 ring-1 ring-gold-500/40'
-                : 'border-slate-200 dark:border-navy-700 text-slate-600 dark:text-slate-300'
+                : 'border-slate-200 dark:border-navy-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-navy-800'
             }`}
           >
             <Monitor className="w-4 h-4" />

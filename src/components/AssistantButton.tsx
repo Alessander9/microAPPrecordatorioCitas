@@ -10,7 +10,7 @@ export const AssistantButton: React.FC<AssistantButtonProps> = ({ onClick }) => 
     <button
       type="button"
       onClick={onClick}
-      className="fixed bottom-20 right-4 sm:right-6 z-30 group flex items-center gap-2 py-3 px-4 rounded-2xl bg-gradient-to-r from-navy-950 via-navy-900 to-navy-950 dark:from-gold-500 dark:via-amber-400 dark:to-gold-500 text-gold-400 dark:text-navy-950 font-bold text-xs shadow-xl shadow-navy-950/20 dark:shadow-gold-500/20 border border-gold-500/40 hover:scale-105 active:scale-95 transition-all duration-200"
+      className="fixed bottom-20 md:bottom-8 right-4 sm:right-6 md:right-8 z-30 group flex items-center gap-2 py-3 px-4 rounded-2xl bg-gradient-to-r from-navy-950 via-navy-900 to-navy-950 dark:from-gold-500 dark:via-amber-400 dark:to-gold-500 text-gold-400 dark:text-navy-950 font-bold text-xs shadow-xl shadow-navy-950/20 dark:shadow-gold-500/20 border border-gold-500/40 hover:scale-105 active:scale-95 transition-all duration-200"
       title="Abrir Asistente IA con DeepSeek"
       aria-label="Abrir Asistente de Citas"
     >
