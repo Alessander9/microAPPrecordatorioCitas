@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Client } from '../types/client';
-import { formatSpanishDate } from '../lib/dateUtils';
+import { formatSpanishDate, getRelativeDateLabel } from '../lib/dateUtils';
 import { 
   MessageCircle, 
   CheckCircle2, 
@@ -32,6 +32,7 @@ export const ClientCard: React.FC<ClientCardProps> = ({
 }) => {
   const isHoy = category === 'hoy';
   const isAtrasado = category === 'atrasados';
+  const relativeLabel = getRelativeDateLabel(client.fechaProximaCita);
 
   return (
     <div
@@ -46,10 +47,23 @@ export const ClientCard: React.FC<ClientCardProps> = ({
       {/* Top row: Client name and Status badges */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <div>
-          <h3 className="font-bold text-base text-navy-900 dark:text-white leading-tight">
-            {client.nombre}
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold text-base text-navy-900 dark:text-white leading-tight">
+              {client.nombre}
+            </h3>
+            {relativeLabel && !client.recordado && (
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                isHoy
+                  ? 'bg-gold-500/20 text-gold-700 dark:text-gold-300 border border-gold-500/30'
+                  : isAtrasado
+                  ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400 border border-rose-200 dark:border-rose-900'
+                  : 'bg-slate-100 text-slate-700 dark:bg-navy-800 dark:text-slate-300'
+              }`}>
+                {relativeLabel}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Próxima cita:{' '}
             <span className={`font-semibold capitalize ${isHoy ? 'text-gold-600 dark:text-gold-400' : isAtrasado ? 'text-rose-500 font-bold' : 'text-slate-700 dark:text-slate-200'}`}>
               {formatSpanishDate(client.fechaProximaCita)}

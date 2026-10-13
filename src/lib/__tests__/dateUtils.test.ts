@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { formatSpanishDate, groupClientsByReminderDate } from '../dateUtils';
+import { 
+  formatSpanishDate, 
+  groupClientsByReminderDate, 
+  getRelativeDateLabel, 
+  calculateDaysBetween 
+} from '../dateUtils';
 import type { Client } from '../../types/client';
 
 describe('dateUtils', () => {
@@ -9,6 +14,22 @@ describe('dateUtils', () => {
     expect(formatted.toLowerCase()).toContain('viernes');
     expect(formatted.toLowerCase()).toContain('16');
     expect(formatted.toLowerCase()).toContain('octubre');
+  });
+
+  it('calculates human-readable relative date labels', () => {
+    const refDate = new Date('2026-10-13T12:00:00');
+
+    expect(getRelativeDateLabel('2026-10-13', refDate)).toBe('Hoy');
+    expect(getRelativeDateLabel('2026-10-14', refDate)).toBe('Mañana');
+    expect(getRelativeDateLabel('2026-10-16', refDate)).toBe('En 3 días');
+    expect(getRelativeDateLabel('2026-10-12', refDate)).toBe('Ayer');
+    expect(getRelativeDateLabel('2026-10-10', refDate)).toBe('Hace 3 días');
+  });
+
+  it('calculates calendar days difference accurately', () => {
+    expect(calculateDaysBetween('2026-10-13', '2026-10-20')).toBe(7);
+    expect(calculateDaysBetween('2026-10-13', '2026-10-27')).toBe(14);
+    expect(calculateDaysBetween('2026-10-20', '2026-10-13')).toBe(-7);
   });
 
   it('groups clients correctly into hoy, atrasados, proximos7Dias and resto', () => {

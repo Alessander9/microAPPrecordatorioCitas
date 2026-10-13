@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import type { Client } from '../types/client';
 import { isValidWhatsAppNumber, normalizeWhatsAppNumber } from '../lib/whatsapp';
-import { format, addDays } from 'date-fns';
-import { X, Calendar, Phone, User, FileText, Check } from 'lucide-react';
+import { formatSpanishDate, calculateDaysBetween } from '../lib/dateUtils';
+import { format, addDays, subDays, parseISO } from 'date-fns';
+import { X, Calendar, Phone, User, FileText, Check, Clock, Sparkles } from 'lucide-react';
 
 interface ClientFormModalProps {
   isOpen: boolean;
@@ -45,6 +46,23 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
   }, [clientToEdit, isOpen]);
 
   if (!isOpen) return null;
+
+  // Quick preset setters for Fecha de Atención
+  const setAtencionToday = () => setFechaAtencion(format(new Date(), 'yyyy-MM-dd'));
+  const setAtencionYesterday = () => setFechaAtencion(format(subDays(new Date(), 1), 'yyyy-MM-dd'));
+
+  // Quick preset setters for Fecha de Recordatorio (offset from fechaAtencion or today)
+  const setNextCitaOffset = (days: number) => {
+    try {
+      const baseDate = fechaAtencion ? parseISO(`${fechaAtencion}T00:00:00`) : new Date();
+      setFechaProximaCita(format(addDays(baseDate, days), 'yyyy-MM-dd'));
+    } catch {
+      setFechaProximaCita(format(addDays(new Date(), days), 'yyyy-MM-dd'));
+    }
+  };
+
+  // Days difference between attention and reminder
+  const daysInterval = fechaAtencion && fechaProximaCita ? calculateDaysBetween(fechaAtencion, fechaProximaCita) : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,9 +119,14 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
         
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 dark:border-navy-800 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-navy-900 dark:text-white">
-            {clientToEdit ? 'Editar cliente' : 'Nuevo cliente'}
-          </h2>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-gold-500/10 text-gold-500 flex items-center justify-center font-bold">
+              <Calendar className="w-4 h-4" />
+            </div>
+            <h2 className="text-base font-bold text-navy-900 dark:text-white">
+              {clientToEdit ? 'Editar cliente' : 'Nuevo cliente'}
+            </h2>
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -114,7 +137,7 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4">
           {error && (
             <div className="p-3 text-xs font-medium text-rose-600 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl">
               {error}
@@ -125,7 +148,7 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
               <User className="w-4 h-4 text-gold-500" />
-              Nombre completo
+              Nombre del paciente / cliente
             </label>
             <input
               type="text"
@@ -133,7 +156,7 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
               value={nombre}
               onChange={e => setNombre(e.target.value)}
               placeholder="Ej. Valeria Mendoza"
-              className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50"
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50"
             />
           </div>
 
@@ -143,50 +166,126 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
               <Phone className="w-4 h-4 text-emerald-500" />
               WhatsApp (Perú +51 por defecto)
             </label>
-            <div className="relative">
-              <input
-                type="tel"
-                required
-                value={whatsapp}
-                onChange={e => setWhatsapp(e.target.value)}
-                placeholder="51987654321 o 987654321"
-                className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50"
-              />
-            </div>
-            <p className="text-[11px] text-slate-400 mt-1">
-              Si escribes 9 dígitos (ej. 987654321) se agregará automáticamente el código 51 de Perú.
-            </p>
+            <input
+              type="tel"
+              required
+              value={whatsapp}
+              onChange={e => setWhatsapp(e.target.value)}
+              placeholder="51987654321 o 987654321"
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50"
+            />
           </div>
 
-          {/* Fechas Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
-                <Calendar className="w-4 h-4 text-slate-400" />
-                Fecha de atención
+          {/* Calendario: 1. Fecha de Atención */}
+          <div className="p-3.5 rounded-2xl bg-slate-50/80 dark:bg-navy-800/40 border border-slate-200 dark:border-navy-800 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Clock className="w-4 h-4 text-slate-400" />
+                Fecha de atención (última sesión)
               </label>
-              <input
-                type="date"
-                required
-                value={fechaAtencion}
-                onChange={e => setFechaAtencion(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50"
-              />
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={setAtencionToday}
+                  className="px-2 py-0.5 rounded-lg text-[11px] font-medium bg-slate-200/80 dark:bg-navy-700 text-slate-700 dark:text-slate-300 hover:bg-gold-500/10 hover:text-gold-600 transition"
+                >
+                  Hoy
+                </button>
+                <button
+                  type="button"
+                  onClick={setAtencionYesterday}
+                  className="px-2 py-0.5 rounded-lg text-[11px] font-medium bg-slate-200/80 dark:bg-navy-700 text-slate-700 dark:text-slate-300 hover:bg-gold-500/10 hover:text-gold-600 transition"
+                >
+                  Ayer
+                </button>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+            <input
+              type="date"
+              required
+              value={fechaAtencion}
+              onChange={e => setFechaAtencion(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50"
+            />
+            {fechaAtencion && (
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 capitalize">
+                {formatSpanishDate(fechaAtencion)}
+              </p>
+            )}
+          </div>
+
+          {/* Calendario: 2. Fecha de Próxima Cita / Recordatorio */}
+          <div className="p-3.5 rounded-2xl bg-gold-500/5 dark:bg-gold-500/5 border border-gold-500/30 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-navy-900 dark:text-gold-400 flex items-center gap-1.5">
                 <Calendar className="w-4 h-4 text-gold-500" />
-                Próxima cita
+                Fecha de recordatorio / próxima cita
               </label>
-              <input
-                type="date"
-                required
-                value={fechaProximaCita}
-                onChange={e => setFechaProximaCita(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50"
-              />
             </div>
+
+            {/* Accesos rápidos de intervalo */}
+            <div className="grid grid-cols-4 gap-1.5">
+              <button
+                type="button"
+                onClick={() => setNextCitaOffset(7)}
+                className="py-1.5 px-2 rounded-lg text-center text-[11px] font-semibold bg-white dark:bg-navy-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-navy-700 hover:border-gold-500 hover:text-gold-600 transition"
+                title="En 7 días"
+              >
+                +1 sem
+              </button>
+              <button
+                type="button"
+                onClick={() => setNextCitaOffset(14)}
+                className="py-1.5 px-2 rounded-lg text-center text-[11px] font-semibold bg-white dark:bg-navy-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-navy-700 hover:border-gold-500 hover:text-gold-600 transition"
+                title="En 14 días"
+              >
+                +2 sem
+              </button>
+              <button
+                type="button"
+                onClick={() => setNextCitaOffset(21)}
+                className="py-1.5 px-2 rounded-lg text-center text-[11px] font-semibold bg-white dark:bg-navy-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-navy-700 hover:border-gold-500 hover:text-gold-600 transition"
+                title="En 21 días"
+              >
+                +3 sem
+              </button>
+              <button
+                type="button"
+                onClick={() => setNextCitaOffset(28)}
+                className="py-1.5 px-2 rounded-lg text-center text-[11px] font-semibold bg-white dark:bg-navy-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-navy-700 hover:border-gold-500 hover:text-gold-600 transition"
+                title="En 28 días"
+              >
+                +1 mes
+              </button>
+            </div>
+
+            <input
+              type="date"
+              required
+              value={fechaProximaCita}
+              onChange={e => setFechaProximaCita(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50"
+            />
+
+            {/* Resumen dinámico del tratamiento */}
+            {fechaProximaCita && (
+              <div className="pt-1 flex items-center justify-between text-[11px]">
+                <span className="font-semibold text-navy-900 dark:text-gold-300 capitalize">
+                  {formatSpanishDate(fechaProximaCita)}
+                </span>
+                {daysInterval > 0 ? (
+                  <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    En {daysInterval} días
+                  </span>
+                ) : daysInterval === 0 ? (
+                  <span className="text-gold-600 font-bold">Mismo día</span>
+                ) : (
+                  <span className="text-rose-500 font-medium">Anterior a la atención</span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Notas */}
@@ -194,7 +293,7 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                 <FileText className="w-4 h-4 text-slate-400" />
-                Notas opcionales
+                Notas clínicas / temas a tratar
               </label>
               <span className={`text-[11px] ${notas.length > 140 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
                 {notas.length}/140
@@ -205,7 +304,7 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
               maxLength={140}
               value={notas}
               onChange={e => setNotas(e.target.value)}
-              placeholder="Ej. Revisar ejercicios de respiración y hábitos de sueño..."
+              placeholder="Ej. Revisar tareas de respiración, avance del tratamiento..."
               className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 resize-none"
             />
           </div>
@@ -216,17 +315,17 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-3 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-navy-800 transition"
+              className="px-4 py-2.5 rounded-xl text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-navy-800 transition"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-3 rounded-xl text-xs font-bold text-white bg-navy-900 dark:bg-gold-500 dark:text-navy-950 hover:bg-navy-800 dark:hover:bg-gold-400 disabled:opacity-40 transition shadow-md flex items-center gap-1.5"
+              className="px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-navy-900 dark:bg-gold-500 dark:text-navy-950 hover:bg-navy-800 dark:hover:bg-gold-400 disabled:opacity-40 transition shadow-md flex items-center gap-1.5"
             >
               <Check className="w-4 h-4" />
-              {isSubmitting ? 'Guardando...' : clientToEdit ? 'Actualizar' : 'Guardar cliente'}
+              {isSubmitting ? 'Guardando...' : clientToEdit ? 'Actualizar cita' : 'Guardar cita'}
             </button>
           </div>
         </form>

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
-import { getSetting, setSetting } from '../db/db';
+import { getSetting, setSetting, requestPersistentStorage } from '../db/db';
 import { generateSalt, hashPin, verifyPin } from '../lib/crypto';
 
 interface AuthContextType {
@@ -12,6 +12,7 @@ interface AuthContextType {
   unlock: (pin: string) => Promise<{ success: boolean; error?: string; remainingLockSeconds?: number }>;
   changePin: (currentPin: string, newPin: string) => Promise<{ success: boolean; error?: string }>;
   lock: () => void;
+  grantTemporaryUnlockGrace: (seconds?: number) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,6 +31,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const inactivityTimerRef = useRef<number | null>(null);
   const wasHiddenRef = useRef<boolean>(false);
+  const hiddenTimestampRef = useRef<number | null>(null);
+  const graceUntilRef = useRef<number>(0);
 
   // Load initial PIN status and lock status from Dexie
   const loadAuthStatus = useCallback(async () => {
@@ -55,11 +58,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     loadAuthStatus();
+    requestPersistentStorage().catch(() => {});
   }, [loadAuthStatus]);
 
   // Lock function
   const lock = useCallback(() => {
     setIsUnlocked(false);
+  }, []);
+
+  // Grants a temporary grace period (e.g. when opening WhatsApp) so quick returns don't lock
+  const grantTemporaryUnlockGrace = useCallback((seconds = 90) => {
+    graceUntilRef.current = Date.now() + seconds * 1000;
   }, []);
 
   // Reset inactivity timer
@@ -95,16 +104,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [isUnlocked, resetInactivityTimer]);
 
-  // Lock when returning from background / visibility change
+  // Lock when returning from background / visibility change with WhatsApp grace period
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         wasHiddenRef.current = true;
+        hiddenTimestampRef.current = Date.now();
       } else if (document.visibilityState === 'visible') {
         if (wasHiddenRef.current) {
           wasHiddenRef.current = false;
-          // Auto-lock when returning from background
-          lock();
+          const now = Date.now();
+          const hiddenDuration = hiddenTimestampRef.current ? now - hiddenTimestampRef.current : 0;
+          const isWithinExplicitGrace = now < graceUntilRef.current;
+          const isQuickSwitch = hiddenDuration < 45000; // 45s threshold for quick switches
+
+          if (!isWithinExplicitGrace && !isQuickSwitch) {
+            // Auto-lock when returning from extended background
+            lock();
+          }
         }
       }
     };
@@ -236,6 +253,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         unlock,
         changePin,
         lock,
+        grantTemporaryUnlockGrace,
       }}
     >
       {children}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { PinPad } from './PinPad';
 import { ShieldCheck, ArrowRight, RotateCcw } from 'lucide-react';
@@ -71,6 +71,27 @@ export const PinSetupModal: React.FC = () => {
     setConfirmPin('');
     setError(null);
   };
+
+  // Physical keyboard support (0-9, Backspace, Enter)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isSubmitting) return;
+      if (/^[0-9]$/.test(e.key)) {
+        handleDigit(e.key);
+      } else if (e.key === 'Backspace') {
+        handleDelete();
+      } else if (e.key === 'Enter') {
+        if (step === 'create' && firstPin.length >= 4) {
+          handleContinueToConfirm();
+        } else if (step === 'confirm' && confirmPin.length >= 4) {
+          handleFinishSetup();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [step, firstPin, confirmPin, isSubmitting]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy-950/80 backdrop-blur-md">

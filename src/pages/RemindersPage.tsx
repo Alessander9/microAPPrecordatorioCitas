@@ -12,6 +12,7 @@ import { ClientFormModal } from '../components/ClientFormModal';
 import { RescheduleModal } from '../components/RescheduleModal';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import { WhatsAppPromptModal } from '../components/WhatsAppPromptModal';
+import { useAuth } from '../context/AuthContext';
 import { 
   UserPlus, 
   AlertCircle, 
@@ -21,6 +22,7 @@ import {
 } from 'lucide-react';
 
 export const RemindersPage: React.FC = () => {
+  const { grantTemporaryUnlockGrace } = useAuth();
   // Live query from Dexie
   const clients = useLiveQuery(() => db.clients.toArray(), []) || [];
 
@@ -128,6 +130,7 @@ export const RemindersPage: React.FC = () => {
   };
 
   const handleOpenWhatsApp = (client: Client) => {
+    grantTemporaryUnlockGrace(90); // 90 seconds grace window to write in WhatsApp and return without PIN lock
     const url = buildWhatsAppUrl(client.whatsapp, client.nombre, client.fechaProximaCita, template, therapistName);
     window.open(url, '_blank', 'noopener,noreferrer');
     // Prompt to mark as reminded if not already marked

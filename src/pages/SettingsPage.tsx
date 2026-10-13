@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getSetting, setSetting } from '../db/db';
+import { getSetting, setSetting, isStoragePersisted, requestPersistentStorage } from '../db/db';
 import { DEFAULT_MESSAGE_TEMPLATE, DEFAULT_THERAPIST_NAME, MESSAGE_PRESETS } from '../types/settings';
 import { exportBackup, importBackup } from '../lib/backup';
 import { 
@@ -56,6 +56,7 @@ export const SettingsPage: React.FC = () => {
 
   // Theme state
   const [theme, setTheme] = useState<'system' | 'light' | 'dark'>('system');
+  const [isStorageProtected, setIsStorageProtected] = useState(false);
 
   // Load initial settings
   useEffect(() => {
@@ -75,6 +76,7 @@ export const SettingsPage: React.FC = () => {
     });
 
     checkPushStatus();
+    isStoragePersisted().then(persisted => setIsStorageProtected(persisted));
   }, []);
 
   const checkPushStatus = async () => {
@@ -605,6 +607,32 @@ export const SettingsPage: React.FC = () => {
         <p className="text-[11px] leading-relaxed">
           Los datos confidenciales de tus clientes (nombres, números telefónicos y notas clínicas) <strong>nunca salen de este dispositivo</strong>. Se almacenan cifrados y protegidos en la base de datos local de tu navegador. El servidor en la nube solo procesa identificadores anónimos y fechas para enviar las alertas push.
         </p>
+
+        {/* Blindaje de Almacenamiento Persistente */}
+        <div className="pt-2 border-t border-slate-200 dark:border-navy-800 flex items-center justify-between gap-2">
+          <div>
+            <p className="font-semibold text-slate-800 dark:text-slate-200">
+              Almacenamiento persistente del navegador
+            </p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              {isStorageProtected
+                ? 'Activo (Blindado contra borrado automático de caché por el sistema móvil)'
+                : 'Estándar (Sujeto a limpieza automática de caché del sistema)'}
+            </p>
+          </div>
+          {!isStorageProtected && (
+            <button
+              type="button"
+              onClick={async () => {
+                const ok = await requestPersistentStorage();
+                setIsStorageProtected(ok);
+              }}
+              className="py-1 px-2.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition flex-shrink-0"
+            >
+              Blindar ahora
+            </button>
+          )}
+        </div>
 
         <div className="pt-2 border-t border-slate-200 dark:border-navy-800 flex items-start gap-2 text-amber-700 dark:text-amber-400 text-[11px]">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />

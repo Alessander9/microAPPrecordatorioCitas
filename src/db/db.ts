@@ -30,3 +30,31 @@ export async function setSetting(key: string, value: any): Promise<void> {
 export async function removeSetting(key: string): Promise<void> {
   await db.settings.delete(key);
 }
+
+/**
+ * Requests persistent storage from the browser so OS doesn't purge IndexedDB cache.
+ */
+export async function requestPersistentStorage(): Promise<boolean> {
+  if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persist) {
+    try {
+      return await navigator.storage.persist();
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
+/**
+ * Checks if persistent storage is already granted.
+ */
+export async function isStoragePersisted(): Promise<boolean> {
+  if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.persisted) {
+    try {
+      return await navigator.storage.persisted();
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}

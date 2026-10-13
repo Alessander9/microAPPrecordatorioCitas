@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import type { Client } from '../types/client';
-import { formatSpanishDate } from '../lib/dateUtils';
+import { formatSpanishDate, calculateDaysBetween } from '../lib/dateUtils';
 import { format, addDays, parseISO } from 'date-fns';
-import { Calendar, X, Clock, Check } from 'lucide-react';
+import { Calendar, X, Clock, Check, Sparkles } from 'lucide-react';
 
 interface RescheduleModalProps {
   client: Client | null;
@@ -33,6 +33,9 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
     const today = new Date();
     setNewDate(format(addDays(today, days), 'yyyy-MM-dd'));
   };
+
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  const daysDiff = newDate ? calculateDaysBetween(todayStr, newDate) : 0;
 
   const handleSave = async () => {
     if (!newDate) return;
@@ -73,7 +76,10 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
 
         <div className="py-4 space-y-4">
           <div className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-navy-800/60 p-3 rounded-xl">
-            Cita actual: <span className="font-semibold text-navy-900 dark:text-slate-200">{formatSpanishDate(client.fechaProximaCita)}</span>
+            Cita anterior:{' '}
+            <span className="font-semibold text-navy-900 dark:text-slate-200 capitalize">
+              {formatSpanishDate(client.fechaProximaCita)}
+            </span>
           </div>
 
           <div>
@@ -87,32 +93,56 @@ export const RescheduleModal: React.FC<RescheduleModalProps> = ({
               onChange={e => setNewDate(e.target.value)}
               className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50"
             />
+            {newDate && (
+              <div className="mt-1.5 flex items-center justify-between text-[11px]">
+                <span className="font-semibold text-gold-600 dark:text-gold-400 capitalize">
+                  {formatSpanishDate(newDate)}
+                </span>
+                {daysDiff > 0 ? (
+                  <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    En {daysDiff} días
+                  </span>
+                ) : daysDiff === 0 ? (
+                  <span className="text-gold-600 font-bold">Hoy</span>
+                ) : (
+                  <span className="text-rose-500">Fecha pasada</span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Quick buttons */}
           <div>
             <p className="text-[11px] font-medium text-slate-400 mb-2">Accesos rápidos desde hoy:</p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-1.5">
               <button
                 type="button"
                 onClick={() => applyOffset(7)}
-                className="py-2 px-3 text-xs rounded-xl bg-slate-100 dark:bg-navy-800 text-slate-700 dark:text-slate-300 hover:bg-gold-500/10 hover:text-gold-600 transition font-medium"
+                className="py-2 px-2 text-xs rounded-xl bg-slate-100 dark:bg-navy-800 text-slate-700 dark:text-slate-300 hover:bg-gold-500/10 hover:text-gold-600 transition font-medium"
               >
-                + 1 semana
+                +1 sem
               </button>
               <button
                 type="button"
                 onClick={() => applyOffset(14)}
-                className="py-2 px-3 text-xs rounded-xl bg-slate-100 dark:bg-navy-800 text-slate-700 dark:text-slate-300 hover:bg-gold-500/10 hover:text-gold-600 transition font-medium"
+                className="py-2 px-2 text-xs rounded-xl bg-slate-100 dark:bg-navy-800 text-slate-700 dark:text-slate-300 hover:bg-gold-500/10 hover:text-gold-600 transition font-medium"
               >
-                + 2 semanas
+                +2 sem
+              </button>
+              <button
+                type="button"
+                onClick={() => applyOffset(21)}
+                className="py-2 px-2 text-xs rounded-xl bg-slate-100 dark:bg-navy-800 text-slate-700 dark:text-slate-300 hover:bg-gold-500/10 hover:text-gold-600 transition font-medium"
+              >
+                +3 sem
               </button>
               <button
                 type="button"
                 onClick={() => applyOffset(28)}
-                className="py-2 px-3 text-xs rounded-xl bg-slate-100 dark:bg-navy-800 text-slate-700 dark:text-slate-300 hover:bg-gold-500/10 hover:text-gold-600 transition font-medium"
+                className="py-2 px-2 text-xs rounded-xl bg-slate-100 dark:bg-navy-800 text-slate-700 dark:text-slate-300 hover:bg-gold-500/10 hover:text-gold-600 transition font-medium"
               >
-                + 1 mes
+                +1 mes
               </button>
             </div>
           </div>

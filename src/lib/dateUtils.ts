@@ -1,4 +1,13 @@
-import { parseISO, format, isToday, isBefore, isAfter, addDays, startOfDay } from 'date-fns';
+import { 
+  parseISO, 
+  format, 
+  isToday, 
+  isBefore, 
+  isAfter, 
+  addDays, 
+  startOfDay, 
+  differenceInCalendarDays 
+} from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { Client } from '../types/client';
 
@@ -15,7 +24,6 @@ export interface GroupedClients {
 export function formatSpanishDate(dateStr: string): string {
   if (!dateStr) return '';
   try {
-    // Append T00:00:00 to avoid timezone shift on YYYY-MM-DD
     const date = parseISO(`${dateStr}T00:00:00`);
     return format(date, "EEEE d 'de' MMMM", { locale: es });
   } catch {
@@ -33,6 +41,43 @@ export function formatShortDate(dateStr: string): string {
     return format(date, 'd MMM yyyy', { locale: es });
   } catch {
     return dateStr;
+  }
+}
+
+/**
+ * Returns a human-friendly relative label ("Hoy", "Mañana", "En 3 días", "Ayer", "Hace 2 días").
+ */
+export function getRelativeDateLabel(dateStr: string, referenceDate = new Date()): string {
+  if (!dateStr) return '';
+  try {
+    const targetDate = startOfDay(parseISO(`${dateStr}T00:00:00`));
+    const today = startOfDay(referenceDate);
+    const diff = differenceInCalendarDays(targetDate, today);
+
+    if (diff === 0) return 'Hoy';
+    if (diff === 1) return 'Mañana';
+    if (diff > 1 && diff <= 14) return `En ${diff} días`;
+    if (diff > 14 && diff <= 30) return `En ${Math.round(diff / 7)} sem.`;
+    if (diff > 30) return `En ${Math.round(diff / 30)} mes(es)`;
+    if (diff === -1) return 'Ayer';
+    if (diff < -1) return `Hace ${Math.abs(diff)} días`;
+
+    return '';
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Calculates calendar days difference between two YYYY-MM-DD date strings.
+ */
+export function calculateDaysBetween(startDateStr: string, endDateStr: string): number {
+  try {
+    const start = startOfDay(parseISO(`${startDateStr}T00:00:00`));
+    const end = startOfDay(parseISO(`${endDateStr}T00:00:00`));
+    return differenceInCalendarDays(end, start);
+  } catch {
+    return 0;
   }
 }
 

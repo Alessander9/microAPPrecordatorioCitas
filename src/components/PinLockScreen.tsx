@@ -60,6 +60,29 @@ export const PinLockScreen: React.FC = () => {
     }
   };
 
+  // Physical keyboard support (0-9, Backspace, Enter)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (remainingSeconds > 0 || isLoading) return;
+      if (/^[0-9]$/.test(e.key)) {
+        if (pin.length < 6) {
+          setError(null);
+          setPin(prev => prev + e.key);
+        }
+      } else if (e.key === 'Backspace') {
+        setError(null);
+        setPin(prev => prev.slice(0, -1));
+      } else if (e.key === 'Enter') {
+        if (pin.length >= 4) {
+          handleUnlock();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [remainingSeconds, isLoading, pin]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-50 dark:bg-navy-950">
       <div className="w-full max-w-sm bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-navy-800 text-center flex flex-col items-center">
