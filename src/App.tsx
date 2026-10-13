@@ -97,7 +97,7 @@ const MainAppContent: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsAssistantOpen(true)}
-              className="py-1.5 px-2.5 sm:px-3 rounded-xl bg-gold-500/10 border border-gold-500/30 text-gold-600 dark:text-gold-400 hover:bg-gold-500/20 text-xs font-bold flex items-center gap-1.5 transition active:scale-95"
+              className="py-1.5 px-2.5 sm:px-3 rounded-xl bg-gold-500/10 border border-gold-500/30 text-gold-600 dark:text-gold-400 hover:bg-gold-500/20 text-xs font-bold flex items-center gap-1.5 transition active:scale-95 flex-shrink-0"
               title="Abrir Asistente IA de Citas"
             >
               <Sparkles className="w-3.5 h-3.5 fill-current animate-pulse text-gold-500" />
@@ -108,7 +108,7 @@ const MainAppContent: React.FC = () => {
             <button
               type="button"
               onClick={lock}
-              className="py-1.5 px-2.5 sm:px-3 rounded-xl bg-slate-100 dark:bg-navy-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-navy-700 text-xs font-semibold flex items-center gap-1.5 transition active:scale-95"
+              className="py-1.5 px-2.5 sm:px-3 rounded-xl bg-slate-100 dark:bg-navy-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-navy-700 text-xs font-semibold flex items-center gap-1.5 transition active:scale-95 flex-shrink-0"
               title="Bloquear sesión ahora"
             >
               <Lock className="w-3.5 h-3.5" />
