@@ -59,3 +59,19 @@ export function buildWhatsAppUrl(
   const encodedText = encodeURIComponent(message);
   return `https://wa.me/${normalizedPhone}?text=${encodedText}`;
 }
+
+/**
+ * Formats phone number for clean human presentation (e.g., +51 987 654 321 or 987 654 321).
+ */
+export function formatPhoneDisplay(phone: string): string {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 11 && digits.startsWith('519')) {
+    return `+51 ${digits.slice(2, 5)} ${digits.slice(5, 8)} ${digits.slice(8)}`;
+  }
+  if (digits.length === 9 && digits.startsWith('9')) {
+    return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+  }
+  return phone;
+}
+

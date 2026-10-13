@@ -4,10 +4,17 @@ import {
   isValidWhatsAppNumber,
   generateReminderMessage,
   buildWhatsAppUrl,
+  formatPhoneDisplay,
 } from '../whatsapp';
 import { DEFAULT_MESSAGE_TEMPLATE } from '../../types/settings';
 
 describe('whatsapp utils', () => {
+  it('formats Peruvian phone numbers for clean human display', () => {
+    expect(formatPhoneDisplay('51987654321')).toBe('+51 987 654 321');
+    expect(formatPhoneDisplay('987654321')).toBe('987 654 321');
+    expect(formatPhoneDisplay('')).toBe('');
+  });
+
   it('normalizes Peruvian 9-digit numbers with 51 prefix', () => {
     expect(normalizeWhatsAppNumber('987654321')).toBe('51987654321');
     expect(normalizeWhatsAppNumber('+51 987 654 321')).toBe('51987654321');

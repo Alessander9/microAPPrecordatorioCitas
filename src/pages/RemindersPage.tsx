@@ -186,7 +186,7 @@ export const RemindersPage: React.FC<RemindersPageProps> = ({ onOpenAssistant })
             type="button"
             onClick={onOpenAssistant}
             className="flex-shrink-0 py-2.5 px-3 rounded-2xl bg-gradient-to-r from-navy-950 to-navy-900 dark:from-navy-800 dark:to-navy-900 border border-gold-500/40 hover:border-gold-500 text-gold-400 active:scale-95 font-bold text-xs shadow-sm flex items-center gap-1.5 transition"
-            title="Abrir Asistente IA de Citas con DeepSeek"
+            title="Abrir Asistente IA de Citas (Groq, Gemini, Mistral)"
           >
             <Sparkles className="w-4 h-4 fill-current text-gold-400 animate-pulse" />
             <span className="hidden sm:inline">Asistente IA</span>
