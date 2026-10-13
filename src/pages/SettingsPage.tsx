@@ -188,16 +188,16 @@ export const SettingsPage: React.FC = () => {
         }),
       });
       const data = await res.json();
-      const provName = provider === 'groq' ? 'Groq (LPU)' : provider === 'gemini' ? 'Google Gemini' : 'Mistral AI';
+      const canalName = provider === 'groq' ? 'Canal Principal' : provider === 'gemini' ? 'Canal de Respaldo 1' : 'Canal de Respaldo 2';
 
       if (res.ok && data.success) {
         setAiTestResult({
-          text: `✅ Conexión exitosa con ${provName} (${data.model || 'modelo activo'}). Inferencia ultra-rápida y herramientas de agenda operativas.`,
+          text: `✅ Conexión exitosa con el ${canalName}. El Asistente Inteligente está 100% operativo y listo para responder.`,
           isError: false,
         });
       } else {
         setAiTestResult({
-          text: `⚠️ Respuesta de ${provName}: ${data.message || data.error || 'No respondió'}. Si falla en producción, la PWA activará la cascada de respaldo automáticamente.`,
+          text: `⚠️ Respuesta del ${canalName}: ${data.message || data.error || 'Sin respuesta'}. La PWA activará la cascada de respaldo automáticamente.`,
           isError: true,
         });
       }
@@ -555,7 +555,7 @@ export const SettingsPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. Asistente IA Clínico Multi-Modelo (Groq, Gemini, Mistral) */}
+      {/* 4. Asistente Inteligente */}
       <section className="bg-white dark:bg-navy-900 rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 dark:border-navy-800 space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -564,13 +564,13 @@ export const SettingsPage: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-sm font-bold text-navy-900 dark:text-white">Motores de Inteligencia Artificial (IA)</h2>
+                <h2 className="text-sm font-bold text-navy-900 dark:text-white">Asistente Inteligente</h2>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                  Multi-Modelo Activo
+                  Alta Disponibilidad Activa
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Groq LPU ultra-rápido por defecto, con respaldo automático en Gemini y Mistral
+                Conexión de alta velocidad con respaldo automático y modo local offline
               </p>
             </div>
           </div>
@@ -597,13 +597,13 @@ export const SettingsPage: React.FC = () => {
           </div>
         )}
 
-        {/* Selector de Proveedor Principal / Predeterminado */}
+        {/* Selector de Modo de Conexión */}
         <div className="space-y-2">
           <label className="block text-xs font-bold text-navy-900 dark:text-slate-200 uppercase tracking-wider text-[11px]">
-            Proveedor Principal de Inferencia
+            Modo de Conexión del Asistente
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            {/* Groq */}
+            {/* Modo 1 */}
             <button
               type="button"
               onClick={() => setSelectedProvider('groq')}
@@ -616,7 +616,7 @@ export const SettingsPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold text-navy-900 dark:text-white">
                   <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
-                  Groq (LPU)
+                  Modo Rápido (Recomendado)
                 </span>
                 {selectedProvider === 'groq' && (
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500 text-navy-950">
@@ -625,11 +625,11 @@ export const SettingsPage: React.FC = () => {
                 )}
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-                Velocidad ultra-rápida (&lt;150ms). Motor primario recomendado.
+                Respuesta instantánea para gestionar citas y recordatorios al segundo.
               </p>
             </button>
 
-            {/* Google Gemini */}
+            {/* Modo 2 */}
             <button
               type="button"
               onClick={() => setSelectedProvider('gemini')}
@@ -642,7 +642,7 @@ export const SettingsPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold text-navy-900 dark:text-white">
                   <Gem className="w-4 h-4 text-sky-500" />
-                  Google Gemini
+                  Modo Detallado
                 </span>
                 {selectedProvider === 'gemini' && (
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-sky-500 text-white">
@@ -651,11 +651,11 @@ export const SettingsPage: React.FC = () => {
                 )}
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-                Gemini 2.5 Flash con alta capacidad de razonamiento contextual.
+                Análisis profundo y comprensión contextual para agendas complejas.
               </p>
             </button>
 
-            {/* Mistral AI */}
+            {/* Modo 3 */}
             <button
               type="button"
               onClick={() => setSelectedProvider('mistral')}
@@ -668,7 +668,7 @@ export const SettingsPage: React.FC = () => {
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold text-navy-900 dark:text-white">
                   <Wind className="w-4 h-4 text-orange-500" />
-                  Mistral AI
+                  Modo Alternativo
                 </span>
                 {selectedProvider === 'mistral' && (
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-orange-500 text-white">
@@ -677,24 +677,24 @@ export const SettingsPage: React.FC = () => {
                 )}
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-                Mistral Small. Respaldo europeo de alta precisión.
+                Canal de respaldo con alta precisión de respuesta.
               </p>
             </button>
           </div>
         </div>
 
-        {/* Configuración de API Keys */}
+        {/* Configuración de Claves de Conexión */}
         <div className="space-y-3.5 pt-2 border-t border-slate-100 dark:border-navy-800">
           <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
-            Credenciales de Acceso a Proveedores (Almacenamiento Local Seguro)
+            Claves de Conexión (Almacenamiento Local Seguro)
           </p>
 
-          {/* 1. Groq Key */}
+          {/* 1. Clave Principal */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
                 <Zap className="w-3.5 h-3.5 text-amber-500" />
-                API Key de Groq (gsk_...)
+                Clave de Conexión Principal
               </label>
               <button
                 type="button"
@@ -703,7 +703,7 @@ export const SettingsPage: React.FC = () => {
                 className="text-[11px] text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 disabled:opacity-40"
               >
                 <Bot className="w-3 h-3" />
-                Probar Groq
+                Probar canal principal
               </button>
             </div>
             <input
@@ -715,12 +715,12 @@ export const SettingsPage: React.FC = () => {
             />
           </div>
 
-          {/* 2. Gemini Key */}
+          {/* 2. Clave de Respaldo 1 */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
                 <Gem className="w-3.5 h-3.5 text-sky-500" />
-                API Key de Google Gemini (AIza...)
+                Clave de Respaldo 1
               </label>
               <button
                 type="button"
@@ -729,7 +729,7 @@ export const SettingsPage: React.FC = () => {
                 className="text-[11px] text-sky-600 dark:text-sky-400 hover:underline flex items-center gap-1 disabled:opacity-40"
               >
                 <Bot className="w-3 h-3" />
-                Probar Gemini
+                Probar respaldo 1
               </button>
             </div>
             <input
@@ -741,12 +741,12 @@ export const SettingsPage: React.FC = () => {
             />
           </div>
 
-          {/* 3. Mistral Key */}
+          {/* 3. Clave de Respaldo 2 */}
           <div className="space-y-1">
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
                 <Wind className="w-3.5 h-3.5 text-orange-500" />
-                API Key de Mistral (mstrl_...)
+                Clave de Respaldo 2
               </label>
               <button
                 type="button"
@@ -755,7 +755,7 @@ export const SettingsPage: React.FC = () => {
                 className="text-[11px] text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-1 disabled:opacity-40"
               >
                 <Bot className="w-3 h-3" />
-                Probar Mistral
+                Probar respaldo 2
               </button>
             </div>
             <input
@@ -772,10 +772,10 @@ export const SettingsPage: React.FC = () => {
         <div className="p-3.5 rounded-2xl bg-slate-100/70 dark:bg-navy-800/60 border border-slate-200/80 dark:border-navy-700/80 text-xs space-y-1.5">
           <div className="flex items-center gap-1.5 font-bold text-navy-900 dark:text-slate-200 text-[11px]">
             <Info className="w-3.5 h-3.5 text-amber-500" />
-            <span>Arquitectura de Alta Disponibilidad y Respaldo Inteligente</span>
+            <span>Alta Disponibilidad y Respaldo Inteligente</span>
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-            La app ejecuta primero el proveedor seleccionado (por defecto <strong>Groq</strong>). Si el servicio seleccionado reporta límite de cuota o indisponibilidad temporal, la consulta salta automáticamente al siguiente proveedor (<strong>Gemini</strong> &rarr; <strong>Mistral</strong> &rarr; <strong>Motor Local Offline</strong>). De esta forma, el asistente nunca dejará de funcionar.
+            La app ejecuta primero el canal de conexión principal. Si se presentan demoras o límites de cuota temporales, la consulta pasa automáticamente a los canales de respaldo y finalmente al motor local en tu propio dispositivo. De esta forma, tu Asistente Inteligente nunca dejará de funcionar.
           </p>
         </div>
       </section>

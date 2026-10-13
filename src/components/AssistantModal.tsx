@@ -40,7 +40,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       id: 'welcome',
       role: 'assistant',
       content:
-        '¡Hola! Soy tu asistente de consultorio impulsado por Groq (Ultra Rápido) con respaldo en Google Gemini y Mistral. Puedo ayudarte a agendar citas, reprogramar pacientes, cambiar datos, eliminar registros o decirte a quién debes escribirle hoy. ¿En qué te ayudo?',
+        '¡Hola! Soy tu Asistente Inteligente. Puedo ayudarte a agendar citas, reprogramar pacientes, cambiar datos, eliminar registros o decirte a quién debes escribirle hoy. ¿En qué te ayudo?',
       timestamp: new Date().toISOString(),
       provider: 'groq',
     },
@@ -204,49 +204,6 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
           </div>
         </div>
 
-        {/* Multi-Model Selector Bar */}
-        <div className="px-3.5 py-1.5 bg-navy-950 text-white flex items-center justify-between gap-2 border-b border-navy-800 text-[11px] flex-shrink-0">
-          <span className="text-slate-400 font-medium">Modelo activo:</span>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setActiveProvider('groq')}
-              className={`px-2 py-0.5 rounded-lg font-bold text-[10px] transition flex items-center gap-1 ${
-                activeProvider === 'groq'
-                  ? 'bg-amber-400 text-navy-950 shadow-sm'
-                  : 'text-slate-300 hover:bg-navy-800'
-              }`}
-              title="Groq LPU (Ultra rápido)"
-            >
-              <span>⚡ Groq</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveProvider('gemini')}
-              className={`px-2 py-0.5 rounded-lg font-bold text-[10px] transition flex items-center gap-1 ${
-                activeProvider === 'gemini'
-                  ? 'bg-blue-500 text-white shadow-sm'
-                  : 'text-slate-300 hover:bg-navy-800'
-              }`}
-              title="Google Gemini 2.5 Flash"
-            >
-              <span>💎 Gemini</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveProvider('mistral')}
-              className={`px-2 py-0.5 rounded-lg font-bold text-[10px] transition flex items-center gap-1 ${
-                activeProvider === 'mistral'
-                  ? 'bg-rose-500 text-white shadow-sm'
-                  : 'text-slate-300 hover:bg-navy-800'
-              }`}
-              title="Mistral AI Small"
-            >
-              <span>🌪️ Mistral</span>
-            </button>
-          </div>
-        </div>
-
         {/* Suggestions chips */}
         <div className="px-3 py-2 bg-slate-50 dark:bg-navy-950/60 border-b border-slate-200/60 dark:border-navy-800/60 flex items-center gap-1.5 overflow-x-auto no-scrollbar flex-shrink-0">
           <button
@@ -399,7 +356,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
                 <span className="w-2 h-2 rounded-full bg-gold-500 animate-bounce [animation-delay:0.2s]" />
                 <span className="w-2 h-2 rounded-full bg-gold-500 animate-bounce [animation-delay:0.4s]" />
                 <span className="text-[11px] text-slate-400 font-medium ml-1">
-                  Procesando con DeepSeek...
+                  El asistente está respondiendo...
                 </span>
               </div>
             </div>

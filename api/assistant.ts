@@ -322,7 +322,8 @@ INSTRUCCIONES CLAVE:
 3. Si el usuario no indica fecha de atención, asume la fecha actual de hoy (${currentDate?.split('T')[0] || new Date().toISOString().split('T')[0]}).
 4. Si el usuario dice "el próximo lunes", "en una semana", "mañana", calcula la fecha exacta YYYY-MM-DD.
 5. El campo notas no debe superar 500 caracteres.
-6. Responde de forma cálida, concisa y profesional en español peruano neutro.`;
+6. Responde de forma cálida, concisa y profesional en español peruano neutro.
+7. REGLA ESTRICTA DE IDENTIDAD: NUNCA menciones marcas, nombres de proveedores ni modelos de inteligencia artificial (tales como Groq, Gemini, Google, Mistral, Llama, Qwen, DeepSeek, OpenAI, ChatGPT, etc.). Si te preguntan quién eres o cómo estás programado, identifícate SIEMPRE y ÚNICAMENTE como el "Asistente Inteligente" del consultorio.`;
 
     const fullMessages = [
       { role: 'system', content: systemPrompt },
@@ -366,7 +367,7 @@ INSTRUCCIONES CLAVE:
     return res.end(
       JSON.stringify({
         error: 'all_providers_failed',
-        message: `Los proveedores de IA no respondieron: ${lastError}`,
+        message: 'No se pudo conectar con el servicio en la nube en este momento. Se activará el modo local.',
       })
     );
   } catch (err: any) {
