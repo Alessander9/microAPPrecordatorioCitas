@@ -175,7 +175,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
             <div>
               <div className="flex items-center gap-1.5">
                 <h3 className="font-bold text-sm tracking-tight text-white leading-none">
-                  Asistente IA de Citas
+                  Asistente Inteligente
                 </h3>
               </div>
               <p className="text-[11px] text-slate-300 font-normal mt-0.5">

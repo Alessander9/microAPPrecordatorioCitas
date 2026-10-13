@@ -98,10 +98,10 @@ const MainAppContent: React.FC = () => {
               type="button"
               onClick={() => setIsAssistantOpen(true)}
               className="py-1.5 px-2.5 sm:px-3 rounded-xl bg-gold-500/10 border border-gold-500/30 text-gold-600 dark:text-gold-400 hover:bg-gold-500/20 text-xs font-bold flex items-center gap-1.5 transition active:scale-95 flex-shrink-0"
-              title="Abrir Asistente IA de Citas"
+              title="Abrir Asistente Inteligente"
             >
               <Sparkles className="w-3.5 h-3.5 fill-current animate-pulse text-gold-500" />
-              <span className="hidden sm:inline">Asistente IA</span>
+              <span className="hidden sm:inline">Asistente Inteligente</span>
             </button>
 
             {/* Lock Session Button */}

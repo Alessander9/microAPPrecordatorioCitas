@@ -186,10 +186,10 @@ export const RemindersPage: React.FC<RemindersPageProps> = ({ onOpenAssistant })
             type="button"
             onClick={onOpenAssistant}
             className="flex-shrink-0 py-2.5 px-3 rounded-2xl bg-gradient-to-r from-navy-950 to-navy-900 dark:from-navy-800 dark:to-navy-900 border border-gold-500/40 hover:border-gold-500 text-gold-400 active:scale-95 font-bold text-xs shadow-sm flex items-center gap-1.5 transition"
-            title="Abrir Asistente IA de Citas (Groq, Gemini, Mistral)"
+            title="Abrir Asistente Inteligente"
           >
             <Sparkles className="w-4 h-4 fill-current text-gold-400 animate-pulse" />
-            <span className="hidden sm:inline">Asistente IA</span>
+            <span className="hidden sm:inline">Asistente Inteligente</span>
           </button>
         )}
       </div>
@@ -225,7 +225,7 @@ export const RemindersPage: React.FC<RemindersPageProps> = ({ onOpenAssistant })
                 className="w-full sm:w-auto py-3 px-5 rounded-xl bg-slate-100 dark:bg-navy-800 border border-gold-500/30 text-gold-600 dark:text-gold-400 text-xs font-bold hover:bg-gold-500/10 transition inline-flex items-center justify-center gap-2"
               >
                 <Sparkles className="w-4 h-4 fill-current" />
-                <span>Usar Asistente IA</span>
+                <span>Usar Asistente Inteligente</span>
               </button>
             )}
           </div>
