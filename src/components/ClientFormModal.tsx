@@ -88,8 +88,8 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
       return;
     }
 
-    if (notas.length > 140) {
-      setError('Las notas no pueden exceder 140 caracteres.');
+    if (notas.length > 500) {
+      setError('Las notas no pueden exceder 500 caracteres.');
       return;
     }
 
@@ -295,17 +295,17 @@ export const ClientFormModal: React.FC<ClientFormModalProps> = ({
                 <FileText className="w-4 h-4 text-slate-400" />
                 Notas clínicas / temas a tratar
               </label>
-              <span className={`text-[11px] ${notas.length > 140 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
-                {notas.length}/140
+              <span className={`text-[11px] ${notas.length > 500 ? 'text-rose-500 font-bold' : 'text-slate-400'}`}>
+                {notas.length}/500
               </span>
             </div>
             <textarea
-              rows={2}
-              maxLength={140}
+              rows={3}
+              maxLength={500}
               value={notas}
               onChange={e => setNotas(e.target.value)}
-              placeholder="Ej. Revisar tareas de respiración, avance del tratamiento..."
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 resize-none"
+              placeholder="Ej. Revisar tareas de respiración, avance del tratamiento, acuerdos de la sesión..."
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 resize-y"
             />
           </div>
 

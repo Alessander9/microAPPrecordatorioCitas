@@ -1,15 +1,23 @@
 import React, { useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from './db/db';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { PinSetupModal } from './components/PinSetupModal';
 import { PinLockScreen } from './components/PinLockScreen';
 import { RemindersPage } from './pages/RemindersPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { InstallPrompt } from './components/InstallPrompt';
-import { Calendar, Settings, Lock } from 'lucide-react';
+import { AssistantModal } from './components/AssistantModal';
+import { AssistantButton } from './components/AssistantButton';
+import { Calendar, Settings, Lock, Sparkles } from 'lucide-react';
 
 const MainAppContent: React.FC = () => {
   const { isInitialized, hasPin, isUnlocked, lock } = useAuth();
   const [activeTab, setActiveTab] = useState<'reminders' | 'settings'>('reminders');
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+
+  // Live query from Dexie for assistant awareness
+  const clients = useLiveQuery(() => db.clients.toArray(), []) || [];
 
   if (!isInitialized) {
     return (
@@ -48,6 +56,16 @@ const MainAppContent: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               type="button"
+              onClick={() => setIsAssistantOpen(true)}
+              className="py-1.5 px-2.5 rounded-xl bg-gold-500/10 border border-gold-500/30 text-gold-600 dark:text-gold-400 hover:bg-gold-500/20 text-xs font-bold flex items-center gap-1.5 transition active:scale-95"
+              title="Abrir Asistente IA de Citas"
+            >
+              <Sparkles className="w-3.5 h-3.5 fill-current animate-pulse" />
+              <span className="hidden xs:inline">Asistente</span>
+            </button>
+
+            <button
+              type="button"
               onClick={lock}
               className="py-1.5 px-3 rounded-xl bg-slate-100 dark:bg-navy-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 text-xs font-semibold flex items-center gap-1.5 transition active:scale-95"
               title="Bloquear sesión ahora"
@@ -61,7 +79,11 @@ const MainAppContent: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-xl w-full mx-auto p-4 sm:p-5">
-        {activeTab === 'reminders' ? <RemindersPage /> : <SettingsPage />}
+        {activeTab === 'reminders' ? (
+          <RemindersPage onOpenAssistant={() => setIsAssistantOpen(true)} />
+        ) : (
+          <SettingsPage />
+        )}
       </main>
 
       {/* Bottom Navigation Bar (Mobile-first tactile tabs) */}
@@ -96,6 +118,16 @@ const MainAppContent: React.FC = () => {
 
         </div>
       </nav>
+
+      {/* Floating Assistant Button */}
+      <AssistantButton onClick={() => setIsAssistantOpen(true)} />
+
+      {/* Assistant Modal Dialog */}
+      <AssistantModal
+        isOpen={isAssistantOpen}
+        onClose={() => setIsAssistantOpen(false)}
+        clients={clients}
+      />
 
       {/* Install Prompt component */}
       <InstallPrompt />

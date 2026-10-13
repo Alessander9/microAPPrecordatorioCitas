@@ -18,10 +18,15 @@ import {
   AlertCircle, 
   CalendarCheck, 
   Clock, 
-  Layers
+  Layers,
+  Sparkles
 } from 'lucide-react';
 
-export const RemindersPage: React.FC = () => {
+interface RemindersPageProps {
+  onOpenAssistant?: () => void;
+}
+
+export const RemindersPage: React.FC<RemindersPageProps> = ({ onOpenAssistant }) => {
   const { grantTemporaryUnlockGrace } = useAuth();
   // Live query from Dexie
   const clients = useLiveQuery(() => db.clients.toArray(), []) || [];
@@ -170,11 +175,23 @@ export const RemindersPage: React.FC = () => {
             setEditingClient(null);
             setIsFormOpen(true);
           }}
-          className="flex-shrink-0 py-2.5 px-4 rounded-2xl bg-gold-500 hover:bg-gold-400 active:scale-95 text-navy-950 font-bold text-xs shadow-md shadow-gold-500/20 flex items-center gap-1.5 transition"
+          className="flex-shrink-0 py-2.5 px-3.5 rounded-2xl bg-gold-500 hover:bg-gold-400 active:scale-95 text-navy-950 font-bold text-xs shadow-md shadow-gold-500/20 flex items-center gap-1.5 transition"
         >
           <UserPlus className="w-4 h-4" />
           <span className="hidden sm:inline">Nuevo cliente</span>
         </button>
+
+        {onOpenAssistant && (
+          <button
+            type="button"
+            onClick={onOpenAssistant}
+            className="flex-shrink-0 py-2.5 px-3 rounded-2xl bg-gradient-to-r from-navy-950 to-navy-900 dark:from-navy-800 dark:to-navy-900 border border-gold-500/40 hover:border-gold-500 text-gold-400 active:scale-95 font-bold text-xs shadow-sm flex items-center gap-1.5 transition"
+            title="Abrir Asistente IA de Citas con DeepSeek"
+          >
+            <Sparkles className="w-4 h-4 fill-current text-gold-400 animate-pulse" />
+            <span className="hidden sm:inline">Asistente IA</span>
+          </button>
+        )}
       </div>
 
       {/* Empty State */}
@@ -189,17 +206,29 @@ export const RemindersPage: React.FC = () => {
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 mb-6 max-w-xs mx-auto leading-relaxed">
             Registra a tus clientes con la fecha de su próxima cita. La app te recordará a quién escribirle por WhatsApp.
           </p>
-          <button
-            type="button"
-            onClick={() => {
-              setEditingClient(null);
-              setIsFormOpen(true);
-            }}
-            className="py-3 px-6 rounded-xl bg-navy-900 dark:bg-gold-500 text-white dark:text-navy-950 text-xs font-bold shadow-md hover:opacity-90 transition inline-flex items-center gap-2"
-          >
-            <UserPlus className="w-4 h-4" />
-            Registrar mi primer cliente
-          </button>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => {
+                setEditingClient(null);
+                setIsFormOpen(true);
+              }}
+              className="w-full sm:w-auto py-3 px-5 rounded-xl bg-navy-900 dark:bg-gold-500 text-white dark:text-navy-950 text-xs font-bold shadow-md hover:opacity-90 transition inline-flex items-center justify-center gap-2"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Registrar cliente</span>
+            </button>
+            {onOpenAssistant && (
+              <button
+                type="button"
+                onClick={onOpenAssistant}
+                className="w-full sm:w-auto py-3 px-5 rounded-xl bg-slate-100 dark:bg-navy-800 border border-gold-500/30 text-gold-600 dark:text-gold-400 text-xs font-bold hover:bg-gold-500/10 transition inline-flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-4 h-4 fill-current" />
+                <span>Usar Asistente IA</span>
+              </button>
+            )}
+          </div>
         </div>
       )}
 

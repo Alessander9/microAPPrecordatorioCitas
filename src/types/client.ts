@@ -6,7 +6,7 @@ export interface Client {
   fechaProximaCita: string; // YYYY-MM-DD
   recordado: boolean;
   fechaRecordado?: string | null; // ISO string o YYYY-MM-DD cuando se marcó
-  notas?: string; // Máx 140 caracteres
+  notas?: string; // Máx 500 caracteres
   createdAt: string;
   updatedAt: string;
 }
