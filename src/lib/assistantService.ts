@@ -5,11 +5,14 @@ import { syncRemindersToServer } from './syncService';
 import { formatSpanishDate } from './dateUtils';
 import { addDays, format, parseISO, isValid } from 'date-fns';
 
+export type AIProvider = 'groq' | 'gemini' | 'mistral' | 'local';
+
 export interface AssistantMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
+  provider?: AIProvider;
   actionResult?: {
     type: 'created' | 'rescheduled' | 'edited' | 'deleted' | 'reminded' | 'list' | 'error';
     client?: Partial<Client>;
@@ -21,6 +24,7 @@ export interface AssistantMessage {
 
 export interface AssistantResponse {
   reply: string;
+  provider?: AIProvider;
   actionResult?: AssistantMessage['actionResult'];
   isLocalFallback?: boolean;
   error?: string;
@@ -439,20 +443,30 @@ export async function processLocalNLP(userInput: string, allClients: Client[]): 
 }
 
 /**
- * Función principal: Envía la consulta a DeepSeek vía /api/assistant.
- * Si la cuenta tiene saldo insuficiente o falla la red, recurre automáticamente al motor local.
+ * Función principal: Envía la consulta a la IA (Groq por defecto, Gemini o Mistral de respaldo) vía /api/assistant.
+ * Si todos fallan o el dispositivo está desconectado, recurre automáticamente al motor local.
  */
 export async function sendAssistantMessage(
   conversationHistory: { role: 'user' | 'assistant'; content: string }[],
   allClients: Client[],
-  customApiKey?: string
+  preferredProvider?: 'groq' | 'gemini' | 'mistral',
+  customKeys?: { groq?: string; gemini?: string; mistral?: string }
 ): Promise<AssistantResponse> {
   const latestUserPrompt = conversationHistory[conversationHistory.length - 1]?.content || '';
   const clientsSummary = buildClientsSummary(allClients);
   const nowIso = new Date().toISOString();
 
-  // Obtener API Key guardada en ajustes si no se proporcionó directamente
-  const effectiveKey = customApiKey || (await getSetting<string>('deepseekApiKey', ''));
+  // Obtener proveedor y claves guardadas en ajustes si no se pasaron explícitamente
+  const effectiveProvider = preferredProvider || (await getSetting<'groq' | 'gemini' | 'mistral'>('aiProvider', 'groq'));
+  const storedGroq = await getSetting<string>('groqApiKey', '');
+  const storedGemini = await getSetting<string>('geminiApiKey', '');
+  const storedMistral = await getSetting<string>('mistralApiKey', '');
+
+  const effectiveKeys = {
+    groq: customKeys?.groq || storedGroq || undefined,
+    gemini: customKeys?.gemini || storedGemini || undefined,
+    mistral: customKeys?.mistral || storedMistral || undefined,
+  };
 
   try {
     const res = await fetch('/api/assistant', {
@@ -462,30 +476,30 @@ export async function sendAssistantMessage(
         messages: conversationHistory,
         clientsSummary,
         currentDate: nowIso,
-        customApiKey: effectiveKey || undefined,
+        preferredProvider: effectiveProvider,
+        customKeys: effectiveKeys,
       }),
     });
 
     const data = await res.json();
 
-    // Caso de error en DeepSeek (ej: Insufficient Balance o Rate Limit)
+    // Caso de error en proveedores externos (activar motor local)
     if (!res.ok || data.error) {
-      console.warn('DeepSeek API retornó un error, activando motor local:', data);
+      console.warn('Proveedores IA retornaron error o límite, activando motor local:', data);
       const localResult = await processLocalNLP(latestUserPrompt, allClients);
 
-      const notice = data.error === 'insufficient_balance'
-        ? '\n\n⚠️ *(Nota: La cuenta de DeepSeek no tiene saldo disponible ("Insufficient Balance"). He ejecutado tu solicitud usando el motor inteligente local).*'
-        : `\n\n*(Procesado con el motor local debido a: ${data.message || 'error de conexión'})*`;
-
       return {
-        reply: localResult.reply + notice,
+        reply: localResult.reply + `\n\n*(Procesado con motor local inteligente)*`,
+        provider: 'local',
         actionResult: localResult.actionResult,
         isLocalFallback: true,
         error: data.error,
       };
     }
 
-    // Si DeepSeek respondió con Tool Calls (ej: crear_cita, reprogramar_cita, etc.)
+    const providerUsed: AIProvider = data.provider || effectiveProvider || 'groq';
+
+    // Si la IA respondió con Tool Calls (ej: crear_cita, reprogramar_cita, etc.)
     if (data.toolCalls && data.toolCalls.length > 0) {
       let combinedReply = data.message?.content ? `${data.message.content}\n\n` : '';
       let lastActionResult: AssistantMessage['actionResult'] = undefined;
@@ -505,14 +519,16 @@ export async function sendAssistantMessage(
 
       return {
         reply: combinedReply.trim(),
+        provider: providerUsed,
         actionResult: lastActionResult,
         isLocalFallback: false,
       };
     }
 
-    // Respuesta conversacional directa de DeepSeek
+    // Respuesta conversacional directa
     return {
       reply: data.message?.content || 'Operación procesada.',
+      provider: providerUsed,
       isLocalFallback: false,
     };
   } catch (err: any) {
@@ -520,6 +536,7 @@ export async function sendAssistantMessage(
     const localResult = await processLocalNLP(latestUserPrompt, allClients);
     return {
       reply: localResult.reply + '\n\n*(Ejecutado en modo sin conexión / local)*',
+      provider: 'local',
       actionResult: localResult.actionResult,
       isLocalFallback: true,
     };

@@ -34,13 +34,15 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   clients,
 }) => {
   const { grantTemporaryUnlockGrace } = useAuth();
+  const [activeProvider, setActiveProvider] = useState<'groq' | 'gemini' | 'mistral'>('groq');
   const [messages, setMessages] = useState<AssistantMessage[]>([
     {
       id: 'welcome',
       role: 'assistant',
       content:
-        '¡Hola! Soy tu asistente de consultorio impulsado por DeepSeek. Puedo ayudarte a agendar citas, reprogramar pacientes, cambiar datos, eliminar registros o decirte a quién debes escribirle hoy. ¿En qué te ayudo?',
+        '¡Hola! Soy tu asistente de consultorio impulsado por Groq (Ultra Rápido) con respaldo en Google Gemini y Mistral. Puedo ayudarte a agendar citas, reprogramar pacientes, cambiar datos, eliminar registros o decirte a quién debes escribirle hoy. ¿En qué te ayudo?',
       timestamp: new Date().toISOString(),
+      provider: 'groq',
     },
   ]);
   const [inputText, setInputText] = useState('');
@@ -53,6 +55,9 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
+      getSetting<'groq' | 'gemini' | 'mistral'>('aiProvider', 'groq').then(p => {
+        if (p) setActiveProvider(p);
+      });
       getSetting<string>('messageTemplate', DEFAULT_MESSAGE_TEMPLATE).then(t => {
         if (t) setTemplate(t);
       });
@@ -95,13 +100,14 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
         content: m.content,
       }));
 
-      const res = await sendAssistantMessage(apiHistory, clients);
+      const res = await sendAssistantMessage(apiHistory, clients, activeProvider);
 
       const assistantMsg: AssistantMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
         content: res.reply,
         timestamp: new Date().toISOString(),
+        provider: res.provider || activeProvider,
         actionResult: res.actionResult,
         isLocalFallback: res.isLocalFallback,
       };
@@ -113,6 +119,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
         role: 'assistant',
         content: `Ocurrió un error inesperado: ${err.message || 'Error de conexión'}.`,
         timestamp: new Date().toISOString(),
+        provider: 'local',
       };
       setMessages(prev => [...prev, errorMsg]);
     } finally {
@@ -131,6 +138,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
         role: 'assistant',
         content: 'Conversación reiniciada. ¿Qué paciente o recordatorio deseas gestionar ahora?',
         timestamp: new Date().toISOString(),
+        provider: activeProvider,
       },
     ]);
   };
@@ -156,7 +164,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
         aria-modal="true"
       >
         {/* Header */}
-        <div className="px-4 py-3.5 bg-gradient-to-r from-navy-900 via-navy-800 to-navy-950 text-white flex items-center justify-between border-b border-navy-700/60 shadow-sm flex-shrink-0">
+        <div className="px-4 py-3 bg-gradient-to-r from-navy-900 via-navy-800 to-navy-950 text-white flex items-center justify-between border-b border-navy-700/60 shadow-sm flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="relative">
               <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-gold-500 to-amber-300 text-navy-950 flex items-center justify-center shadow-md">
@@ -167,11 +175,8 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
             <div>
               <div className="flex items-center gap-1.5">
                 <h3 className="font-bold text-sm tracking-tight text-white leading-none">
-                  Asistente de Citas
+                  Asistente IA de Citas
                 </h3>
-                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-gold-500/20 text-gold-300 border border-gold-500/30">
-                  DeepSeek IA
-                </span>
               </div>
               <p className="text-[11px] text-slate-300 font-normal mt-0.5">
                 Crea, reprograma, edita o elimina con lenguaje natural
@@ -195,6 +200,49 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
               title="Cerrar asistente"
             >
               <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Multi-Model Selector Bar */}
+        <div className="px-3.5 py-1.5 bg-navy-950 text-white flex items-center justify-between gap-2 border-b border-navy-800 text-[11px] flex-shrink-0">
+          <span className="text-slate-400 font-medium">Modelo activo:</span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setActiveProvider('groq')}
+              className={`px-2 py-0.5 rounded-lg font-bold text-[10px] transition flex items-center gap-1 ${
+                activeProvider === 'groq'
+                  ? 'bg-amber-400 text-navy-950 shadow-sm'
+                  : 'text-slate-300 hover:bg-navy-800'
+              }`}
+              title="Groq LPU (Ultra rápido)"
+            >
+              <span>⚡ Groq</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveProvider('gemini')}
+              className={`px-2 py-0.5 rounded-lg font-bold text-[10px] transition flex items-center gap-1 ${
+                activeProvider === 'gemini'
+                  ? 'bg-blue-500 text-white shadow-sm'
+                  : 'text-slate-300 hover:bg-navy-800'
+              }`}
+              title="Google Gemini 2.5 Flash"
+            >
+              <span>💎 Gemini</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveProvider('mistral')}
+              className={`px-2 py-0.5 rounded-lg font-bold text-[10px] transition flex items-center gap-1 ${
+                activeProvider === 'mistral'
+                  ? 'bg-rose-500 text-white shadow-sm'
+                  : 'text-slate-300 hover:bg-navy-800'
+              }`}
+              title="Mistral AI Small"
+            >
+              <span>🌪️ Mistral</span>
             </button>
           </div>
         </div>

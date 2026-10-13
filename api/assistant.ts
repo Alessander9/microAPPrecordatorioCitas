@@ -195,6 +195,87 @@ const TOOLS = [
   },
 ];
 
+interface ProviderConfig {
+  name: 'groq' | 'gemini' | 'mistral';
+  url: string;
+  model: string;
+  apiKey: string;
+}
+
+function getProviderConfigs(customKeys?: { groq?: string; gemini?: string; mistral?: string }): ProviderConfig[] {
+  const groqKey =
+    customKeys?.groq ||
+    process.env.GROQ_API_KEY ||
+    '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';
+
+  const geminiKey =
+    customKeys?.gemini ||
+    process.env.GEMINI_API_KEY ||
+    'AIzaSyDk8G2wac2FQnW6NWgh-X53e0mhQ-h1kYU';
+
+  const mistralKey =
+    customKeys?.mistral ||
+    process.env.MISTRAL_API_KEY ||
+    'mstrl_xIRlWmxsh5R8NKQ0FXkQiW8bRHaxIyal_4qdnDV';
+
+  return [
+    {
+      name: 'groq',
+      url: 'https://api.groq.com/openai/v1/chat/completions',
+      model: 'qwen/qwen3.8-27b',
+      apiKey: groqKey,
+    },
+    {
+      name: 'gemini',
+      url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+      model: 'gemini-2.5-flash',
+      apiKey: geminiKey,
+    },
+    {
+      name: 'mistral',
+      url: 'https://api.mistral.ai/v1/chat/completions',
+      model: 'mistral-small-latest',
+      apiKey: mistralKey,
+    },
+  ];
+}
+
+async function callProvider(
+  cfg: ProviderConfig,
+  messages: any[],
+  temperature = 0.1
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const res = await fetch(cfg.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${cfg.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: cfg.model,
+        messages,
+        tools: TOOLS,
+        tool_choice: 'auto',
+        temperature,
+        max_tokens: 1000,
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      return {
+        success: false,
+        error: data.error?.message || `HTTP ${res.status} desde ${cfg.name}`,
+      };
+    }
+
+    return { success: true, data };
+  } catch (err: any) {
+    return { success: false, error: err.message || `Fallo de red en ${cfg.name}` };
+  }
+}
+
 export default async function handler(req: IncomingMessage & { body?: any }, res: ServerResponse) {
   // Configurar CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -214,7 +295,7 @@ export default async function handler(req: IncomingMessage & { body?: any }, res
 
   try {
     const rawBody = req.body || (await parseJsonBody(req));
-    const { messages, clientsSummary, currentDate, customApiKey } = rawBody;
+    const { messages, clientsSummary, currentDate, preferredProvider, customKeys } = rawBody;
 
     if (!Array.isArray(messages) || messages.length === 0) {
       res.statusCode = 400;
@@ -222,12 +303,7 @@ export default async function handler(req: IncomingMessage & { body?: any }, res
       return res.end(JSON.stringify({ error: 'messages debe ser un array no vacío.' }));
     }
 
-    const apiKey =
-      customApiKey ||
-      process.env.DEEPSEEK_API_KEY ||
-      'sk-4ccc4c2a20ff42ff98a2440bf9c8878d';
-
-    const systemPrompt = `Eres el Asistente Inteligente del terapeuta para la micro web app PWA "Recordatorio de Citas" en Perú.
+    const systemPrompt = `Eres el Asistente Clínico Inteligente de la micro web app PWA "Recordatorio de Citas" para un terapeuta en Perú.
 Tu función es ayudar al terapeuta a registrar, posponer, editar, eliminar o consultar recordatorios y sesiones de sus clientes mediante lenguaje natural.
 Fecha y hora de referencia: ${currentDate || new Date().toISOString()} (Zona horaria Lima, Perú GMT-5).
 
@@ -241,7 +317,8 @@ INSTRUCCIONES CLAVE:
    - Para cambiar teléfono, notas o datos -> invoca 'editar_cita'.
    - Para borrar o cancelar definitivamente -> invoca 'eliminar_cita'.
    - Para registrar que ya se le escribió por WhatsApp -> invoca 'marcar_recordado'.
-2. Si el usuario te pide crear una cita y no da teléfono, asigna '51900000000' temporal o déjalo vacío y pídeselo amablemente.
+   - Para ver quién tiene cita o buscar clientes -> invoca 'consultar_citas'.
+2. Si el usuario te pide crear una cita y no da teléfono, asigna '51900000000' temporal o pídelo amablemente.
 3. Si el usuario no indica fecha de atención, asume la fecha actual de hoy (${currentDate?.split('T')[0] || new Date().toISOString().split('T')[0]}).
 4. Si el usuario dice "el próximo lunes", "en una semana", "mañana", calcula la fecha exacta YYYY-MM-DD.
 5. El campo notas no debe superar 500 caracteres.
@@ -252,49 +329,44 @@ INSTRUCCIONES CLAVE:
       ...messages,
     ];
 
-    const deepseekRes = await fetch('https://api.deepseek.com/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: fullMessages,
-        tools: TOOLS,
-        tool_choice: 'auto',
-        temperature: 0.1,
-        max_tokens: 1000,
-      }),
+    const configs = getProviderConfigs(customKeys);
+
+    // Ordenar configs según el proveedor preferido (por defecto: Groq -> Gemini -> Mistral)
+    const primaryName = preferredProvider || 'groq';
+    const sortedConfigs = [...configs].sort((a, b) => {
+      if (a.name === primaryName) return -1;
+      if (b.name === primaryName) return 1;
+      return 0;
     });
 
-    const data = await deepseekRes.json();
-
-    if (!deepseekRes.ok || data.error) {
-      const errorMsg = data.error?.message || 'Error desconocido de DeepSeek API';
-      const isBalanceError =
-        errorMsg.toLowerCase().includes('balance') ||
-        data.error?.code === 'insufficient_balance';
-
-      res.statusCode = deepseekRes.status >= 400 && deepseekRes.status < 500 ? deepseekRes.status : 502;
-      res.setHeader('Content-Type', 'application/json');
-      return res.end(
-        JSON.stringify({
-          error: isBalanceError ? 'insufficient_balance' : 'deepseek_error',
-          message: errorMsg,
-          rawError: data.error,
-        })
-      );
+    let lastError = '';
+    for (const cfg of sortedConfigs) {
+      const result = await callProvider(cfg, fullMessages);
+      if (result.success && result.data) {
+        const choice = result.data.choices?.[0];
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        return res.end(
+          JSON.stringify({
+            success: true,
+            provider: cfg.name,
+            model: cfg.model,
+            message: choice?.message || { role: 'assistant', content: 'Operación procesada.' },
+            toolCalls: choice?.message?.tool_calls || [],
+          })
+        );
+      }
+      lastError = result.error || `Error en ${cfg.name}`;
+      console.warn(`Fallo con proveedor ${cfg.name}:`, lastError);
     }
 
-    const choice = data.choices?.[0];
-    res.statusCode = 200;
+    // Si todos los proveedores externos fallaron, responder para que el motor local de la PWA tome control
+    res.statusCode = 502;
     res.setHeader('Content-Type', 'application/json');
     return res.end(
       JSON.stringify({
-        success: true,
-        message: choice?.message || { role: 'assistant', content: 'Operación procesada.' },
-        toolCalls: choice?.message?.tool_calls || [],
+        error: 'all_providers_failed',
+        message: `Los proveedores de IA no respondieron: ${lastError}`,
       })
     );
   } catch (err: any) {

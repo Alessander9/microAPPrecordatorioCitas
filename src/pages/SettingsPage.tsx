@@ -27,7 +27,10 @@ import {
   RefreshCw,
   Info,
   Sparkles,
-  Bot
+  Bot,
+  Zap,
+  Gem,
+  Wind
 } from 'lucide-react';
 
 export const SettingsPage: React.FC = () => {
@@ -44,11 +47,14 @@ export const SettingsPage: React.FC = () => {
   const [therapistName, setTherapistName] = useState('tu terapeuta');
   const [templateSaved, setTemplateSaved] = useState(false);
 
-  // DeepSeek AI Assistant state
-  const [deepseekKey, setDeepseekKey] = useState('sk-4ccc4c2a20ff42ff98a2440bf9c8878d');
-  const [deepseekSaved, setDeepseekSaved] = useState(false);
-  const [isTestingDeepseek, setIsTestingDeepseek] = useState(false);
-  const [deepseekTestResult, setDeepseekTestResult] = useState<{ text: string; isError: boolean } | null>(null);
+  // Multi-Provider AI Assistant state (Groq default + Gemini + Mistral + Fallback)
+  const [groqKey, setGroqKey] = useState('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');
+  const [geminiKey, setGeminiKey] = useState('AIzaSyDk8G2wac2FQnW6NWgh-X53e0mhQ-h1kYU');
+  const [mistralKey, setMistralKey] = useState('mstrl_xIRlWmxsh5R8NKQ0FXkQiW8bRHaxIyal_4qdnDV');
+  const [selectedProvider, setSelectedProvider] = useState<'groq' | 'gemini' | 'mistral'>('groq');
+  const [aiSaved, setAiSaved] = useState(false);
+  const [isTestingAi, setIsTestingAi] = useState(false);
+  const [aiTestResult, setAiTestResult] = useState<{ text: string; isError: boolean } | null>(null);
 
   // Push notifications state
   const [pushStatus, setPushStatus] = useState<{
@@ -78,8 +84,20 @@ export const SettingsPage: React.FC = () => {
       if (tn) setTherapistName(tn);
     });
 
-    getSetting<string>('deepseekApiKey', 'sk-4ccc4c2a20ff42ff98a2440bf9c8878d').then(k => {
-      if (k) setDeepseekKey(k);
+    getSetting<string>('groqApiKey', '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').then(k => {
+      if (k) setGroqKey(k);
+    });
+
+    getSetting<string>('geminiApiKey', 'AIzaSyDk8G2wac2FQnW6NWgh-X53e0mhQ-h1kYU').then(k => {
+      if (k) setGeminiKey(k);
+    });
+
+    getSetting<string>('mistralApiKey', 'mstrl_xIRlWmxsh5R8NKQ0FXkQiW8bRHaxIyal_4qdnDV').then(k => {
+      if (k) setMistralKey(k);
+    });
+
+    getSetting<'groq' | 'gemini' | 'mistral'>('aiProvider', 'groq').then(p => {
+      if (p) setSelectedProvider(p);
     });
 
     checkPushStatus();
@@ -141,50 +159,55 @@ export const SettingsPage: React.FC = () => {
     setTimeout(() => setTemplateSaved(false), 2500);
   };
 
-  // DeepSeek key handlers
-  const handleSaveDeepseekKey = async () => {
-    await setSetting('deepseekApiKey', deepseekKey.trim());
-    setDeepseekSaved(true);
-    setTimeout(() => setDeepseekSaved(false), 2500);
+  // Multi-Provider AI Assistant handlers
+  const handleSaveAIConfig = async () => {
+    await setSetting('groqApiKey', groqKey.trim());
+    await setSetting('geminiApiKey', geminiKey.trim());
+    await setSetting('mistralApiKey', mistralKey.trim());
+    await setSetting('aiProvider', selectedProvider);
+    setAiSaved(true);
+    setTimeout(() => setAiSaved(false), 2500);
   };
 
-  const handleTestDeepseekKey = async () => {
-    setIsTestingDeepseek(true);
-    setDeepseekTestResult(null);
+  const handleTestProvider = async (provider: 'groq' | 'gemini' | 'mistral') => {
+    setIsTestingAi(true);
+    setAiTestResult(null);
     try {
       const res = await fetch('/api/assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: [{ role: 'user', content: 'Di solo OK para verificar conexión.' }],
-          customApiKey: deepseekKey.trim(),
+          preferredProvider: provider,
+          customKeys: {
+            groq: groqKey.trim(),
+            gemini: geminiKey.trim(),
+            mistral: mistralKey.trim(),
+          },
           currentDate: new Date().toISOString(),
         }),
       });
       const data = await res.json();
+      const provName = provider === 'groq' ? 'Groq (LPU)' : provider === 'gemini' ? 'Google Gemini' : 'Mistral AI';
+
       if (res.ok && data.success) {
-        setDeepseekTestResult({
-          text: '✅ Conexión con DeepSeek exitosa y operativa.',
-          isError: false,
-        });
-      } else if (data.error === 'insufficient_balance') {
-        setDeepseekTestResult({
-          text: '⚠️ Conexión autenticada con éxito, pero la cuenta DeepSeek reporta saldo agotado ("Insufficient Balance"). El Asistente IA operará en Modo Inteligente Local de respaldo. Recarga créditos en platform.deepseek.com para habilitar respuestas generativas completas.',
+        setAiTestResult({
+          text: `✅ Conexión exitosa con ${provName} (${data.model || 'modelo activo'}). Inferencia ultra-rápida y herramientas de agenda operativas.`,
           isError: false,
         });
       } else {
-        setDeepseekTestResult({
-          text: `❌ Error en DeepSeek: ${data.message || 'Verifica la API key.'}`,
+        setAiTestResult({
+          text: `⚠️ Respuesta de ${provName}: ${data.message || data.error || 'No respondió'}. Si falla en producción, la PWA activará la cascada de respaldo automáticamente.`,
           isError: true,
         });
       }
     } catch (err: any) {
-      setDeepseekTestResult({
-        text: `❌ Error de red al contactar servidor: ${err.message}`,
+      setAiTestResult({
+        text: `❌ Error de red al probar conexión: ${err.message}`,
         isError: true,
       });
     } finally {
-      setIsTestingDeepseek(false);
+      setIsTestingAi(false);
     }
   };
 
@@ -532,74 +555,228 @@ export const SettingsPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. Asistente IA Clínico (DeepSeek) */}
-      <section className="bg-white dark:bg-navy-900 rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 dark:border-navy-800 space-y-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-gold-500 to-amber-300 text-navy-950 flex items-center justify-center shadow-sm">
-            <Sparkles className="w-5 h-5 fill-current" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-navy-900 dark:text-white">Asistente IA de Citas</h2>
-              <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-gold-500/10 text-gold-600 dark:text-gold-400 border border-gold-500/30">
-                DeepSeek
-              </span>
+      {/* 4. Asistente IA Clínico Multi-Modelo (Groq, Gemini, Mistral) */}
+      <section className="bg-white dark:bg-navy-900 rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-200 dark:border-navy-800 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-gold-400 text-navy-950 flex items-center justify-center shadow-sm flex-shrink-0">
+              <Sparkles className="w-5 h-5 fill-current" />
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Permite agendar, reprogramar, editar y eliminar citas con lenguaje natural
-            </p>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-sm font-bold text-navy-900 dark:text-white">Motores de Inteligencia Artificial (IA)</h2>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                  Multi-Modelo Activo
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Groq LPU ultra-rápido por defecto, con respaldo automático en Gemini y Mistral
+              </p>
+            </div>
           </div>
+
+          <button
+            type="button"
+            onClick={handleSaveAIConfig}
+            className="self-end sm:self-center py-2 px-4 rounded-xl bg-navy-900 dark:bg-gold-500 text-white dark:text-navy-950 hover:opacity-90 text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+          >
+            <Check className="w-4 h-4" />
+            <span>{aiSaved ? '¡Configuración guardada!' : 'Guardar todo'}</span>
+          </button>
         </div>
 
-        {deepseekTestResult && (
+        {aiTestResult && (
           <div
-            className={`p-3 rounded-xl text-xs font-medium border ${
-              deepseekTestResult.isError
-                ? 'bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/40 dark:border-rose-900'
-                : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-900'
+            className={`p-3.5 rounded-2xl text-xs font-medium border leading-relaxed ${
+              aiTestResult.isError
+                ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300'
+                : 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:border-emerald-900 dark:text-emerald-300'
             }`}
           >
-            {deepseekTestResult.text}
+            {aiTestResult.text}
           </div>
         )}
 
+        {/* Selector de Proveedor Principal / Predeterminado */}
         <div className="space-y-2">
-          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-            API Key de DeepSeek
+          <label className="block text-xs font-bold text-navy-900 dark:text-slate-200 uppercase tracking-wider text-[11px]">
+            Proveedor Principal de Inferencia
           </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={deepseekKey}
-              onChange={e => setDeepseekKey(e.target.value)}
-              placeholder="sk-..."
-              className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-gold-500/50"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            {/* Groq */}
             <button
               type="button"
-              onClick={handleSaveDeepseekKey}
-              className="py-2.5 px-3.5 rounded-xl bg-navy-900 dark:bg-gold-500 text-white dark:text-navy-950 hover:opacity-90 text-xs font-bold transition flex items-center gap-1.5 flex-shrink-0"
+              onClick={() => setSelectedProvider('groq')}
+              className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between gap-2 ${
+                selectedProvider === 'groq'
+                  ? 'bg-amber-500/10 border-amber-500/50 ring-2 ring-amber-500/30 dark:bg-amber-500/10'
+                  : 'bg-slate-50 dark:bg-navy-800/60 border-slate-200 dark:border-navy-700 hover:border-slate-300'
+              }`}
             >
-              <Check className="w-4 h-4" />
-              <span>{deepseekSaved ? '¡Guardada!' : 'Guardar'}</span>
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-navy-900 dark:text-white">
+                  <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
+                  Groq (LPU)
+                </span>
+                {selectedProvider === 'groq' && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-amber-500 text-navy-950">
+                    Activo
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                Velocidad ultra-rápida (&lt;150ms). Motor primario recomendado.
+              </p>
+            </button>
+
+            {/* Google Gemini */}
+            <button
+              type="button"
+              onClick={() => setSelectedProvider('gemini')}
+              className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between gap-2 ${
+                selectedProvider === 'gemini'
+                  ? 'bg-sky-500/10 border-sky-500/50 ring-2 ring-sky-500/30 dark:bg-sky-500/10'
+                  : 'bg-slate-50 dark:bg-navy-800/60 border-slate-200 dark:border-navy-700 hover:border-slate-300'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-navy-900 dark:text-white">
+                  <Gem className="w-4 h-4 text-sky-500" />
+                  Google Gemini
+                </span>
+                {selectedProvider === 'gemini' && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-sky-500 text-white">
+                    Activo
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                Gemini 2.5 Flash con alta capacidad de razonamiento contextual.
+              </p>
+            </button>
+
+            {/* Mistral AI */}
+            <button
+              type="button"
+              onClick={() => setSelectedProvider('mistral')}
+              className={`p-3.5 rounded-2xl border text-left transition flex flex-col justify-between gap-2 ${
+                selectedProvider === 'mistral'
+                  ? 'bg-orange-500/10 border-orange-500/50 ring-2 ring-orange-500/30 dark:bg-orange-500/10'
+                  : 'bg-slate-50 dark:bg-navy-800/60 border-slate-200 dark:border-navy-700 hover:border-slate-300'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-navy-900 dark:text-white">
+                  <Wind className="w-4 h-4 text-orange-500" />
+                  Mistral AI
+                </span>
+                {selectedProvider === 'mistral' && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-orange-500 text-white">
+                    Activo
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                Mistral Small. Respaldo europeo de alta precisión.
+              </p>
             </button>
           </div>
-          <p className="text-[11px] text-slate-400">
-            Se almacena únicamente en tu dispositivo local para máxima confidencialidad.
-          </p>
         </div>
 
-        <div className="pt-2 border-t border-slate-100 dark:border-navy-800/80 flex items-center justify-between">
-          <span className="text-[11px] text-slate-500">¿Deseas verificar la conexión con DeepSeek?</span>
-          <button
-            type="button"
-            onClick={handleTestDeepseekKey}
-            disabled={isTestingDeepseek || !deepseekKey.trim()}
-            className="py-1.5 px-3 rounded-lg text-xs font-semibold text-gold-600 dark:text-gold-400 hover:bg-gold-500/10 transition flex items-center gap-1.5 disabled:opacity-40"
-          >
-            <Bot className="w-3.5 h-3.5" />
-            <span>{isTestingDeepseek ? 'Probando...' : 'Probar conexión'}</span>
-          </button>
+        {/* Configuración de API Keys */}
+        <div className="space-y-3.5 pt-2 border-t border-slate-100 dark:border-navy-800">
+          <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+            Credenciales de Acceso a Proveedores (Almacenamiento Local Seguro)
+          </p>
+
+          {/* 1. Groq Key */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-amber-500" />
+                API Key de Groq (gsk_...)
+              </label>
+              <button
+                type="button"
+                onClick={() => handleTestProvider('groq')}
+                disabled={isTestingAi || !groqKey.trim()}
+                className="text-[11px] text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 disabled:opacity-40"
+              >
+                <Bot className="w-3 h-3" />
+                Probar Groq
+              </button>
+            </div>
+            <input
+              type="text"
+              value={groqKey}
+              onChange={e => setGroqKey(e.target.value)}
+              placeholder="gsk_..."
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+            />
+          </div>
+
+          {/* 2. Gemini Key */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                <Gem className="w-3.5 h-3.5 text-sky-500" />
+                API Key de Google Gemini (AIza...)
+              </label>
+              <button
+                type="button"
+                onClick={() => handleTestProvider('gemini')}
+                disabled={isTestingAi || !geminiKey.trim()}
+                className="text-[11px] text-sky-600 dark:text-sky-400 hover:underline flex items-center gap-1 disabled:opacity-40"
+              >
+                <Bot className="w-3 h-3" />
+                Probar Gemini
+              </button>
+            </div>
+            <input
+              type="text"
+              value={geminiKey}
+              onChange={e => setGeminiKey(e.target.value)}
+              placeholder="AIzaSy..."
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+            />
+          </div>
+
+          {/* 3. Mistral Key */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                <Wind className="w-3.5 h-3.5 text-orange-500" />
+                API Key de Mistral (mstrl_...)
+              </label>
+              <button
+                type="button"
+                onClick={() => handleTestProvider('mistral')}
+                disabled={isTestingAi || !mistralKey.trim()}
+                className="text-[11px] text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-1 disabled:opacity-40"
+              >
+                <Bot className="w-3 h-3" />
+                Probar Mistral
+              </button>
+            </div>
+            <input
+              type="text"
+              value={mistralKey}
+              onChange={e => setMistralKey(e.target.value)}
+              placeholder="mstrl_..."
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+            />
+          </div>
+        </div>
+
+        {/* Explicación de Cascada de Respaldo */}
+        <div className="p-3.5 rounded-2xl bg-slate-100/70 dark:bg-navy-800/60 border border-slate-200/80 dark:border-navy-700/80 text-xs space-y-1.5">
+          <div className="flex items-center gap-1.5 font-bold text-navy-900 dark:text-slate-200 text-[11px]">
+            <Info className="w-3.5 h-3.5 text-amber-500" />
+            <span>Arquitectura de Alta Disponibilidad y Respaldo Inteligente</span>
+          </div>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+            La app ejecuta primero el proveedor seleccionado (por defecto <strong>Groq</strong>). Si el servicio seleccionado reporta límite de cuota o indisponibilidad temporal, la consulta salta automáticamente al siguiente proveedor (<strong>Gemini</strong> &rarr; <strong>Mistral</strong> &rarr; <strong>Motor Local Offline</strong>). De esta forma, el asistente nunca dejará de funcionar.
+          </p>
         </div>
       </section>
 
