@@ -47,10 +47,10 @@ export const SettingsPage: React.FC = () => {
   const [therapistName, setTherapistName] = useState('tu terapeuta');
   const [templateSaved, setTemplateSaved] = useState(false);
 
-  // Multi-Provider AI Assistant state (Groq default + Gemini + Mistral + Fallback)
-  const [groqKey, setGroqKey] = useState('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');
-  const [geminiKey, setGeminiKey] = useState('AIzaSyDk8G2wac2FQnW6NWgh-X53e0mhQ-h1kYU');
-  const [mistralKey, setMistralKey] = useState('mstrl_xIRlWmxsh5R8NKQ0FXkQiW8bRHaxIyal_4qdnDV');
+  // Multi-Provider AI Assistant state
+  const [groqKey, setGroqKey] = useState('');
+  const [geminiKey, setGeminiKey] = useState('');
+  const [mistralKey, setMistralKey] = useState('');
   const [selectedProvider, setSelectedProvider] = useState<'groq' | 'gemini' | 'mistral'>('groq');
   const [aiSaved, setAiSaved] = useState(false);
   const [isTestingAi, setIsTestingAi] = useState(false);
@@ -84,15 +84,15 @@ export const SettingsPage: React.FC = () => {
       if (tn) setTherapistName(tn);
     });
 
-    getSetting<string>('groqApiKey', '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').then(k => {
+    getSetting<string>('groqApiKey', '').then(k => {
       if (k) setGroqKey(k);
     });
 
-    getSetting<string>('geminiApiKey', 'AIzaSyDk8G2wac2FQnW6NWgh-X53e0mhQ-h1kYU').then(k => {
+    getSetting<string>('geminiApiKey', '').then(k => {
       if (k) setGeminiKey(k);
     });
 
-    getSetting<string>('mistralApiKey', 'mstrl_xIRlWmxsh5R8NKQ0FXkQiW8bRHaxIyal_4qdnDV').then(k => {
+    getSetting<string>('mistralApiKey', '').then(k => {
       if (k) setMistralKey(k);
     });
 
@@ -699,7 +699,7 @@ export const SettingsPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleTestProvider('groq')}
-                disabled={isTestingAi || !groqKey.trim()}
+                disabled={isTestingAi}
                 className="text-[11px] text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 disabled:opacity-40"
               >
                 <Bot className="w-3 h-3" />
@@ -707,10 +707,10 @@ export const SettingsPage: React.FC = () => {
               </button>
             </div>
             <input
-              type="text"
+              type="password"
               value={groqKey}
               onChange={e => setGroqKey(e.target.value)}
-              placeholder="gsk_..."
+              placeholder="Activa en el servidor (o ingresa una personalizada)..."
               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
             />
           </div>
@@ -725,7 +725,7 @@ export const SettingsPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleTestProvider('gemini')}
-                disabled={isTestingAi || !geminiKey.trim()}
+                disabled={isTestingAi}
                 className="text-[11px] text-sky-600 dark:text-sky-400 hover:underline flex items-center gap-1 disabled:opacity-40"
               >
                 <Bot className="w-3 h-3" />
@@ -733,10 +733,10 @@ export const SettingsPage: React.FC = () => {
               </button>
             </div>
             <input
-              type="text"
+              type="password"
               value={geminiKey}
               onChange={e => setGeminiKey(e.target.value)}
-              placeholder="AIzaSy..."
+              placeholder="Activa en el servidor (o ingresa una personalizada)..."
               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
             />
           </div>
@@ -751,7 +751,7 @@ export const SettingsPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleTestProvider('mistral')}
-                disabled={isTestingAi || !mistralKey.trim()}
+                disabled={isTestingAi}
                 className="text-[11px] text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-1 disabled:opacity-40"
               >
                 <Bot className="w-3 h-3" />
@@ -759,10 +759,10 @@ export const SettingsPage: React.FC = () => {
               </button>
             </div>
             <input
-              type="text"
+              type="password"
               value={mistralKey}
               onChange={e => setMistralKey(e.target.value)}
-              placeholder="mstrl_..."
+              placeholder="Activa en el servidor (o ingresa una personalizada)..."
               className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-orange-500/50"
             />
           </div>

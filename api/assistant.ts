@@ -203,41 +203,40 @@ interface ProviderConfig {
 }
 
 function getProviderConfigs(customKeys?: { groq?: string; gemini?: string; mistral?: string }): ProviderConfig[] {
-  const groqKey =
-    customKeys?.groq ||
-    process.env.GROQ_API_KEY ||
-    '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';
+  const groqKey = (customKeys?.groq || process.env.GROQ_API_KEY || '').trim();
+  const geminiKey = (customKeys?.gemini || process.env.GEMINI_API_KEY || '').trim();
+  const mistralKey = (customKeys?.mistral || process.env.MISTRAL_API_KEY || '').trim();
 
-  const geminiKey =
-    customKeys?.gemini ||
-    process.env.GEMINI_API_KEY ||
-    'AIzaSyDk8G2wac2FQnW6NWgh-X53e0mhQ-h1kYU';
+  const configs: ProviderConfig[] = [];
 
-  const mistralKey =
-    customKeys?.mistral ||
-    process.env.MISTRAL_API_KEY ||
-    'mstrl_xIRlWmxsh5R8NKQ0FXkQiW8bRHaxIyal_4qdnDV';
-
-  return [
-    {
+  if (groqKey) {
+    configs.push({
       name: 'groq',
       url: 'https://api.groq.com/openai/v1/chat/completions',
       model: 'qwen/qwen3.8-27b',
       apiKey: groqKey,
-    },
-    {
+    });
+  }
+
+  if (geminiKey) {
+    configs.push({
       name: 'gemini',
       url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
       model: 'gemini-2.5-flash',
       apiKey: geminiKey,
-    },
-    {
+    });
+  }
+
+  if (mistralKey) {
+    configs.push({
       name: 'mistral',
       url: 'https://api.mistral.ai/v1/chat/completions',
       model: 'mistral-small-latest',
       apiKey: mistralKey,
-    },
-  ];
+    });
+  }
+
+  return configs;
 }
 
 async function callProvider(
@@ -331,6 +330,17 @@ INSTRUCCIONES CLAVE:
     ];
 
     const configs = getProviderConfigs(customKeys);
+
+    if (configs.length === 0) {
+      res.statusCode = 502;
+      res.setHeader('Content-Type', 'application/json');
+      return res.end(
+        JSON.stringify({
+          error: 'no_providers_configured',
+          message: 'No hay claves de conexión configuradas en el servidor ni en el dispositivo.',
+        })
+      );
+    }
 
     // Ordenar configs según el proveedor preferido (por defecto: Groq -> Gemini -> Mistral)
     const primaryName = preferredProvider || 'groq';

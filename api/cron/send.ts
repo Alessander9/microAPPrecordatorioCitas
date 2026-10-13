@@ -13,14 +13,11 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
 
   // 1. Verify Authorization header with CRON_SECRET
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret) {
-    const authHeader = req.headers['authorization'];
-    const expectedHeader = `Bearer ${cronSecret}`;
-    if (!authHeader || authHeader !== expectedHeader) {
-      res.statusCode = 401;
-      res.setHeader('Content-Type', 'application/json');
-      return res.end(JSON.stringify({ error: 'No autorizado. Se requiere Authorization: Bearer ${CRON_SECRET}.' }));
-    }
+  const authHeader = req.headers['authorization'];
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    res.statusCode = 401;
+    res.setHeader('Content-Type', 'application/json');
+    return res.end(JSON.stringify({ error: 'No autorizado. Se requiere Authorization: Bearer ${CRON_SECRET}.' }));
   }
 
   try {
