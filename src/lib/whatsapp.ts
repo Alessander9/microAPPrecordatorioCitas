@@ -1,5 +1,5 @@
 import { formatSpanishDate } from './dateUtils';
-import { DEFAULT_MESSAGE_TEMPLATE } from '../types/settings';
+import { DEFAULT_MESSAGE_TEMPLATE, DEFAULT_THERAPIST_NAME } from '../types/settings';
 
 /**
  * Normalizes phone number to international format without plus or symbols.
@@ -28,17 +28,20 @@ export function isValidWhatsAppNumber(rawPhone: string): boolean {
 }
 
 /**
- * Generates the personalized reminder message replacing {nombre} and {fecha}.
+ * Generates the personalized reminder message replacing {nombre}, {fecha} and {terapeuta}.
  */
 export function generateReminderMessage(
   template: string = DEFAULT_MESSAGE_TEMPLATE,
   clientName: string,
-  appointmentDateStr: string
+  appointmentDateStr: string,
+  therapistName?: string
 ): string {
   const formattedDate = formatSpanishDate(appointmentDateStr);
+  const signature = (therapistName && therapistName.trim()) || DEFAULT_THERAPIST_NAME;
   return template
     .replace(/{nombre}/gi, clientName.trim())
-    .replace(/{fecha}/gi, formattedDate);
+    .replace(/{fecha}/gi, formattedDate)
+    .replace(/{terapeuta}/gi, signature);
 }
 
 /**
@@ -48,10 +51,11 @@ export function buildWhatsAppUrl(
   phone: string,
   clientName: string,
   appointmentDateStr: string,
-  template: string = DEFAULT_MESSAGE_TEMPLATE
+  template: string = DEFAULT_MESSAGE_TEMPLATE,
+  therapistName?: string
 ): string {
   const normalizedPhone = normalizeWhatsAppNumber(phone);
-  const message = generateReminderMessage(template, clientName, appointmentDateStr);
+  const message = generateReminderMessage(template, clientName, appointmentDateStr, therapistName);
   const encodedText = encodeURIComponent(message);
   return `https://wa.me/${normalizedPhone}?text=${encodedText}`;
 }

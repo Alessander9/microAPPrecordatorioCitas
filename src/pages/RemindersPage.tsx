@@ -26,6 +26,7 @@ export const RemindersPage: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [template, setTemplate] = useState(DEFAULT_MESSAGE_TEMPLATE);
+  const [therapistName, setTherapistName] = useState('');
 
   // Modals state
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -35,10 +36,13 @@ export const RemindersPage: React.FC = () => {
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
   const [promptWhatsAppClient, setPromptWhatsAppClient] = useState<Client | null>(null);
 
-  // Load WhatsApp template from settings
+  // Load WhatsApp template and therapist name from settings
   useEffect(() => {
     getSetting<string>('messageTemplate', DEFAULT_MESSAGE_TEMPLATE).then(t => {
       if (t) setTemplate(t);
+    });
+    getSetting<string>('therapistName', '').then(tn => {
+      if (tn) setTherapistName(tn);
     });
   }, []);
 
@@ -124,7 +128,7 @@ export const RemindersPage: React.FC = () => {
   };
 
   const handleOpenWhatsApp = (client: Client) => {
-    const url = buildWhatsAppUrl(client.whatsapp, client.nombre, client.fechaProximaCita, template);
+    const url = buildWhatsAppUrl(client.whatsapp, client.nombre, client.fechaProximaCita, template, therapistName);
     window.open(url, '_blank', 'noopener,noreferrer');
     // Prompt to mark as reminded if not already marked
     if (!client.recordado) {

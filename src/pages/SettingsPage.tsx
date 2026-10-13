@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getSetting, setSetting } from '../db/db';
-import { DEFAULT_MESSAGE_TEMPLATE } from '../types/settings';
+import { DEFAULT_MESSAGE_TEMPLATE, DEFAULT_THERAPIST_NAME, MESSAGE_PRESETS } from '../types/settings';
 import { exportBackup, importBackup } from '../lib/backup';
 import { 
   getPushSubscriptionState, 
@@ -36,8 +36,8 @@ export const SettingsPage: React.FC = () => {
   const [pinMessage, setPinMessage] = useState<{ text: string; isError: boolean } | null>(null);
   const [isChangingPin, setIsChangingPin] = useState(false);
 
-  // WhatsApp template state
   const [template, setTemplate] = useState(DEFAULT_MESSAGE_TEMPLATE);
+  const [therapistName, setTherapistName] = useState('tu terapeuta');
   const [templateSaved, setTemplateSaved] = useState(false);
 
   // Push notifications state
@@ -61,6 +61,10 @@ export const SettingsPage: React.FC = () => {
   useEffect(() => {
     getSetting<string>('messageTemplate', DEFAULT_MESSAGE_TEMPLATE).then(t => {
       if (t) setTemplate(t);
+    });
+
+    getSetting<string>('therapistName', DEFAULT_THERAPIST_NAME).then(tn => {
+      if (tn) setTherapistName(tn);
     });
 
     getSetting<'system' | 'light' | 'dark'>('theme', 'system').then(th => {
@@ -134,13 +138,16 @@ export const SettingsPage: React.FC = () => {
   // Save WhatsApp template
   const handleSaveTemplate = async () => {
     await setSetting('messageTemplate', template);
+    await setSetting('therapistName', therapistName);
     setTemplateSaved(true);
     setTimeout(() => setTemplateSaved(false), 2500);
   };
 
   const handleResetTemplate = async () => {
     setTemplate(DEFAULT_MESSAGE_TEMPLATE);
+    setTherapistName(DEFAULT_THERAPIST_NAME);
     await setSetting('messageTemplate', DEFAULT_MESSAGE_TEMPLATE);
+    await setSetting('therapistName', DEFAULT_THERAPIST_NAME);
     setTemplateSaved(true);
     setTimeout(() => setTemplateSaved(false), 2500);
   };
@@ -328,33 +335,73 @@ export const SettingsPage: React.FC = () => {
             <MessageSquare className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-navy-900 dark:text-white">Plantilla de WhatsApp</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Personaliza el mensaje automático para tus pacientes</p>
+            <h2 className="text-sm font-bold text-navy-900 dark:text-white">Mensaje de WhatsApp para Pacientes</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Personaliza el saludo y la mención de su tratamiento</p>
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
+          {/* Nombre / Firma del Terapeuta */}
           <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Tu nombre o firma profesional
+            </label>
+            <input
+              type="text"
+              value={therapistName}
+              onChange={e => setTherapistName(e.target.value)}
+              placeholder="Ej. tu terapeuta / Lic. Alessander"
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50"
+            />
+            <p className="text-[11px] text-slate-400 mt-1">
+              Reemplaza la variable <code className="text-gold-600 dark:text-gold-400 font-semibold">{'{terapeuta}'}</code> en el mensaje.
+            </p>
+          </div>
+
+          {/* Plantillas sugeridas (Presets) */}
+          <div>
+            <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-2">Plantillas sugeridas:</p>
+            <div className="flex flex-wrap gap-1.5">
+              {MESSAGE_PRESETS.map((preset, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setTemplate(preset.template)}
+                  className="py-1.5 px-2.5 rounded-lg text-xs font-medium bg-slate-100 hover:bg-gold-500/10 hover:text-gold-600 dark:bg-navy-800 dark:hover:bg-navy-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-navy-700 transition"
+                >
+                  {preset.title}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Editor de plantilla */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Texto del mensaje
+            </label>
             <textarea
               rows={3}
               value={template}
               onChange={e => setTemplate(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 resize-none"
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-navy-800 border border-slate-200 dark:border-navy-700 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500/50 resize-none leading-relaxed"
             />
             <p className="text-[11px] text-slate-400 mt-1">
-              Variables disponibles: <code className="text-gold-600 dark:text-gold-400 font-semibold">{'{nombre}'}</code> y <code className="text-gold-600 dark:text-gold-400 font-semibold">{'{fecha}'}</code>
+              Variables: <code className="text-gold-600 dark:text-gold-400 font-semibold">{'{nombre}'}</code>, <code className="text-gold-600 dark:text-gold-400 font-semibold">{'{fecha}'}</code> y <code className="text-gold-600 dark:text-gold-400 font-semibold">{'{terapeuta}'}</code>
             </p>
           </div>
 
           {/* Vista previa en vivo */}
-          <div className="p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-900/50 text-xs">
-            <p className="text-[10px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider mb-1">
-              Vista previa:
+          <div className="p-3.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-200/60 dark:border-emerald-900/60 text-xs">
+            <p className="text-[10px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+              <MessageSquare className="w-3.5 h-3.5" />
+              Vista previa del saludo:
             </p>
-            <p className="text-slate-700 dark:text-slate-300 italic">
-              {template
+            <p className="text-slate-800 dark:text-slate-200 italic leading-relaxed">
+              &quot;{template
                 .replace(/{nombre}/gi, 'Mariana')
-                .replace(/{fecha}/gi, 'viernes 17 de octubre')}
+                .replace(/{fecha}/gi, 'viernes 17 de octubre')
+                .replace(/{terapeuta}/gi, therapistName.trim() || 'tu terapeuta')}&quot;
             </p>
           </div>
 
@@ -364,7 +411,7 @@ export const SettingsPage: React.FC = () => {
               onClick={handleResetTemplate}
               className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 underline"
             >
-              Restaurar por defecto
+              Restaurar predeterminado
             </button>
             <button
               type="button"
@@ -372,7 +419,7 @@ export const SettingsPage: React.FC = () => {
               className="py-2 px-4 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition shadow-sm flex items-center gap-1.5"
             >
               {templateSaved ? <Check className="w-4 h-4" /> : null}
-              {templateSaved ? 'Guardado' : 'Guardar plantilla'}
+              {templateSaved ? 'Guardado' : 'Guardar mensaje'}
             </button>
           </div>
         </div>

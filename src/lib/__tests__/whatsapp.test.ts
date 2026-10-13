@@ -5,6 +5,7 @@ import {
   generateReminderMessage,
   buildWhatsAppUrl,
 } from '../whatsapp';
+import { DEFAULT_MESSAGE_TEMPLATE } from '../../types/settings';
 
 describe('whatsapp utils', () => {
   it('normalizes Peruvian 9-digit numbers with 51 prefix', () => {
@@ -20,11 +21,21 @@ describe('whatsapp utils', () => {
     expect(isValidWhatsAppNumber('')).toBe(false);
   });
 
-  it('interpolates template with {nombre} and {fecha}', () => {
-    const template = 'Hola {nombre}, tu cita es el {fecha}.';
-    const message = generateReminderMessage(template, 'María Flores', '2026-10-16');
+  it('interpolates template with {nombre}, {fecha} and {terapeuta}', () => {
+    const template = 'Hola {nombre}, te saluda {terapeuta}. Tu sesión del tratamiento es el {fecha}.';
+    const message = generateReminderMessage(template, 'María Flores', '2026-10-16', 'Lic. Alessander');
 
     expect(message).toContain('María Flores');
+    expect(message).toContain('Lic. Alessander');
+    expect(message).toContain('tratamiento');
+    expect(message.toLowerCase()).toContain('viernes 16 de octubre');
+  });
+
+  it('interpolates default template containing greeting and treatment mention', () => {
+    const message = generateReminderMessage(DEFAULT_MESSAGE_TEMPLATE, 'Carlos', '2026-10-16');
+    expect(message).toContain('Hola Carlos');
+    expect(message).toContain('te saluda tu terapeuta');
+    expect(message).toContain('tratamiento');
     expect(message.toLowerCase()).toContain('viernes 16 de octubre');
   });
 
